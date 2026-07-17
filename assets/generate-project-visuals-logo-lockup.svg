@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">Generate Project Visuals horizontal logo</title>
+  <desc id="logo-description">Editable horizontal vector logo for Generate Project Visuals.</desc>
+  <g id="logo-lockup">
+    <g id="logo-mark" transform="translate(290.603 187.72) scale(0.155391)"><path xmlns="http://www.w3.org/2000/svg" d="M176 64 H92 C76 64 64 76 64 92 V176 H108 V108 H176 Z" fill="#202124" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M336 64 H420 C436 64 448 76 448 92 V176 H404 V108 H336 Z" fill="#2855d9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M176 448 H92 C76 448 64 436 64 420 V336 H108 V404 H176 Z" fill="#2855d9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M336 448 H420 C436 448 448 436 448 420 V336 H404 V404 H336 Z" fill="#202124" />
+  <rect xmlns="http://www.w3.org/2000/svg" x="136" y="176" width="240" height="160" rx="32" fill="#2855d9" />
+  <rect xmlns="http://www.w3.org/2000/svg" x="176" y="216" width="160" height="80" rx="20" fill="#202124" />
+</g>
+    <text id="logo-wordmark" x="396.218" y="258" fill="#202124" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="81" font-weight="700" letter-spacing="0">Generate Project Visuals</text>
+  </g>
+</svg>

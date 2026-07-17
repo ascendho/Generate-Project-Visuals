@@ -1,0 +1,136 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="100%"
+  height="100%"
+  viewBox="0 0 1920 1080"
+  preserveAspectRatio="xMidYMid meet"
+  lang="__LANGUAGE__"
+  xml:lang="__LANGUAGE__"
+  direction="__TEXT_DIRECTION__"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">__ACCESSIBLE_TITLE__</title>
+  <desc id="description">__ACCESSIBLE_DESCRIPTION__</desc>
+
+  <rect width="1920" height="1080" fill="#ffffff"/>
+
+  <g
+    fill="none"
+    stroke="#2855d9"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.12"
+  >
+    <g>
+      <path d="M-90 72 C54 8 216 18 318 104 C410 182 408 296 548 354"/>
+      <path d="M-98 108 C48 44 202 52 292 128 C376 198 376 310 516 374"/>
+      <path d="M-104 144 C40 82 184 86 266 154 C342 218 344 324 484 394"/>
+      <path d="M-110 180 C34 120 168 120 240 180 C310 238 312 340 452 414"/>
+      <path d="M-116 216 C26 158 150 154 214 204 C278 258 280 354 420 434"/>
+      <path d="M-122 252 C20 196 134 188 188 230 C246 278 248 370 388 454"/>
+    </g>
+    <g transform="translate(1920 1080) scale(-1 -1)">
+      <path d="M-90 72 C54 8 216 18 318 104 C410 182 408 296 548 354"/>
+      <path d="M-98 108 C48 44 202 52 292 128 C376 198 376 310 516 374"/>
+      <path d="M-104 144 C40 82 184 86 266 154 C342 218 344 324 484 394"/>
+      <path d="M-110 180 C34 120 168 120 240 180 C310 238 312 340 452 414"/>
+      <path d="M-116 216 C26 158 150 154 214 204 C278 258 280 354 420 434"/>
+      <path d="M-122 252 C20 196 134 188 188 230 C246 278 248 370 388 454"/>
+    </g>
+  </g>
+
+  <g fill="none" stroke="#2855d9" stroke-width="1.5" opacity="0.08">
+    <path d="M1370 76 C1504 36 1650 46 1740 110 C1820 168 1860 252 1970 278"/>
+    <path d="M1412 110 C1528 76 1650 84 1728 140 C1798 190 1838 264 1958 300"/>
+    <path d="M1448 932 C1564 988 1690 992 1774 938 C1848 892 1890 826 1952 812"/>
+    <path d="M-30 798 C72 816 110 890 190 936 C278 986 394 980 508 932"/>
+  </g>
+
+  __PROJECT_IDENTITY__
+
+  <g text-anchor="middle" letter-spacing="0">
+    <rect x="924" y="314" width="72" height="5" rx="2.5" fill="#2855d9"/>
+
+    <text
+      id="promo-headline"
+      data-safe-text="true"
+      x="960"
+      y="430"
+      fill="#2855d9"
+      font-family="__PROMO_HEADLINE_FONT_FAMILY__"
+      font-size="__PROMO_HEADLINE_SIZE__"
+      font-style="__PROMO_HEADLINE_FONT_STYLE__"
+      font-weight="400"
+    >__PROMO_HEADLINE__</text>
+
+    <text
+      id="promo-description-line-1"
+      data-safe-text="true"
+      x="960"
+      y="530"
+      fill="#5f6368"
+      font-family="__PROMO_BODY_FONT_FAMILY__"
+      font-size="__PROMO_DESCRIPTION_SIZE__"
+      font-weight="400"
+    >__PROMO_DESCRIPTION_LINE_1__</text>
+    <text
+      id="promo-description-line-2"
+      data-safe-text="true"
+      x="960"
+      y="582"
+      fill="#5f6368"
+      font-family="__PROMO_BODY_FONT_FAMILY__"
+      font-size="__PROMO_DESCRIPTION_SIZE__"
+      font-weight="400"
+    >__PROMO_DESCRIPTION_LINE_2__</text>
+  </g>
+
+  <path d="M540 650 H1380" fill="none" stroke="#d9dfef" stroke-width="2"/>
+
+  <a href="__PROJECT_URL__" target="_blank">
+    <rect x="__QR_BOX_X__" y="700" width="220" height="220" rx="4" fill="#ffffff" stroke="#d9dfef" stroke-width="2"/>
+    <g transform="translate(__QR_TRANSLATE_X__ 720) scale(__QR_SCALE__)" shape-rendering="crispEdges">
+      <path id="promo-qr-modules" d="__QR_PATH__" fill="#202124"/>
+    </g>
+    <g letter-spacing="0">
+      <text
+        id="promo-cta"
+        data-safe-text="true"
+        x="__PROMO_LINK_TEXT_X__"
+        y="780"
+        fill="#5f6368"
+        font-family="__PROMO_BODY_FONT_FAMILY__"
+        font-size="28"
+        font-weight="500"
+        text-anchor="__PROMO_CTA_TEXT_ANCHOR__"
+      >__CTA__</text>
+      <text
+        id="promo-project-url"
+        data-safe-text="true"
+        x="__PROMO_LINK_TEXT_X__"
+        y="835"
+        fill="#2855d9"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        font-size="__URL_SIZE__"
+        font-weight="500"
+        text-anchor="__PROMO_URL_TEXT_ANCHOR__"
+        direction="ltr"
+        unicode-bidi="isolate"
+      >__DISPLAY_URL__</text>
+    </g>
+  </a>
+
+  <text
+    id="promo-notice"
+    data-safe-text="true"
+    x="960"
+    y="970"
+    text-anchor="middle"
+    letter-spacing="0"
+    fill="#72767d"
+    font-family="__PROMO_BODY_FONT_FAMILY__"
+    font-size="__NOTICE_SIZE__"
+    font-weight="400"
+  >__NOTICE__</text>
+</svg>
