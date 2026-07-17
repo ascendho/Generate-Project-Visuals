@@ -1,0 +1,37 @@
+{
+  "name": "generate-github-cover",
+  "version": "0.1.0",
+  "description": "Turn repository context into polished project branding and shareable artwork.",
+  "author": {
+    "name": "ascendho",
+    "url": "https://github.com/ascendho"
+  },
+  "homepage": "https://github.com/ascendho/Generate-Project-Visuals#readme",
+  "repository": "https://github.com/ascendho/Generate-Project-Visuals",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "agent-skill",
+    "project-branding",
+    "logo",
+    "social-preview"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Generate Project Visuals",
+    "shortDescription": "Create logos, bilingual covers, and social artwork.",
+    "longDescription": "Analyze a repository and produce editable logos, English and Chinese covers, exact-size social previews, and promotional artwork.",
+    "developerName": "ascendho",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Create this project's logo and bilingual visual asset set."
+    ],
+    "brandColor": "#2855D9",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  }
+}

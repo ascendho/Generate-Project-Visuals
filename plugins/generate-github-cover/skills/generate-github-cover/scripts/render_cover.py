@@ -52,7 +52,7 @@ UPRIGHT_LANGUAGES = {
     "th",
     "ti",
 }
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "assets" / "templates"
+TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 COVER_TEMPLATE_PATH = TEMPLATE_DIR / "clean-editorial-cover.svg"
 PROMO_TEMPLATE_PATH = TEMPLATE_DIR / "clean-editorial-promo.svg"
 
@@ -491,7 +491,7 @@ def _load_segno():
     except ModuleNotFoundError as exc:
         raise CoverError(
             "Segno is required for promotional QR codes. Install it with "
-            "`python -m pip install -e \".[cover]\"`."
+            "`python -m pip install playwright segno`."
         ) from exc
     return segno
 

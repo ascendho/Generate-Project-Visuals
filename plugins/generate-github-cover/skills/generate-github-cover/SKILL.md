@@ -10,6 +10,11 @@ model for analysis and copywriting, then use the bundled helpers for
 deterministic SVG layout and PNG rendering. Do not call an image model in this
 version of the skill.
 
+Resolve `<skill-dir>` to the directory containing this `SKILL.md` before
+running bundled commands. The Skill may be installed through a Plugin, copied
+to a user Skill directory, or checked out in a source repository; never assume
+that it lives under the target repository.
+
 ## Cover Workflow
 
 1. Find the repository root, inspect `git status`, and preserve unrelated work.
@@ -44,7 +49,7 @@ version of the skill.
    and thumbnail size, then revise weak or overflowing copy.
 
    ```sh
-   python skills/generate-github-cover/scripts/render_cover.py render \
+   python <skill-dir>/scripts/render_cover.py render \
      assets/<repo-slug>-cover.json \
      --output-dir /tmp/<repo-slug>-cover-preview
    ```
@@ -53,7 +58,7 @@ version of the skill.
    when the user explicitly requested an update.
 
    ```sh
-   python skills/generate-github-cover/scripts/render_cover.py validate \
+   python <skill-dir>/scripts/render_cover.py validate \
      assets/<repo-slug>-cover.json \
      --output-dir assets
    ```
@@ -77,7 +82,7 @@ settings, commit, or push unless the user explicitly requests it.
 3. Generate and inspect a contact sheet:
 
    ```sh
-   python skills/generate-github-cover/scripts/render_logo.py preview \
+   python <skill-dir>/scripts/render_logo.py preview \
      --project-name "Example Project" \
      --slug example-project \
      --input-dir /tmp/example-project-logo-concepts \
@@ -89,13 +94,13 @@ settings, commit, or push unless the user explicitly requests it.
    canonical forms in SVG and transparent PNG:
 
    ```sh
-   python skills/generate-github-cover/scripts/render_logo.py render \
+   python <skill-dir>/scripts/render_logo.py render \
      --project-name "Example Project" \
      --slug example-project \
      --mark /tmp/example-project-logo-concepts/concept-a.svg \
      --output-dir assets
 
-   python skills/generate-github-cover/scripts/render_logo.py validate \
+   python <skill-dir>/scripts/render_logo.py validate \
      --slug example-project \
      --output-dir assets
    ```

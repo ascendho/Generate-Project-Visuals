@@ -50,9 +50,9 @@
     "AGENTS.md",
     "README.md",
     "README.zh-CN.md",
-    "SKILL.md",
-    "scripts/render_cover.py",
-    "scripts/render_logo.py",
-    "references/clean-editorial.md"
+    "plugins/generate-github-cover/.codex-plugin/plugin.json",
+    "plugins/generate-github-cover/skills/generate-github-cover/SKILL.md",
+    "plugins/generate-github-cover/skills/generate-github-cover/scripts/render_cover.py",
+    "plugins/generate-github-cover/skills/generate-github-cover/scripts/render_logo.py"
   ]
 }

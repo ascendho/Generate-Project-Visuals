@@ -1,0 +1,20 @@
+{
+  "name": "generate-project-visuals",
+  "interface": {
+    "displayName": "Generate Project Visuals"
+  },
+  "plugins": [
+    {
+      "name": "generate-github-cover",
+      "source": {
+        "source": "local",
+        "path": "./plugins/generate-github-cover"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
