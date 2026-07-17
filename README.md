@@ -16,11 +16,11 @@
 </p>
 
 Generate Project Visuals is a Codex Plugin and standalone Skill that reads a
-repository and creates its Logo Mark, Logo Lockup, English and Simplified
-Chinese README Covers, `1280x640` Social Previews, and `16:9` Promo images.
-Every public image is exported as PNG at an exact size; SVG is limited to
-bundled templates and temporary Logo concepts. Other languages are generated
-only when explicitly requested.
+repository and creates its Logo Mark and Logo Lockup plus an English README
+Cover, `1280x640` Social Preview, and `16:9` Promo image. Every public image is
+exported as PNG at an exact size; SVG is limited to bundled templates and
+temporary Logo concepts. Additional or alternative languages are generated
+only when explicitly requested or already configured.
 
 The project brand is **Generate Project Visuals**. The stable Plugin, Skill,
 and invocation name remains `generate-github-cover`.
@@ -70,7 +70,7 @@ standalone Skill archive.
 ## Use
 
 ```text
-Use the generate-github-cover skill to create or update this GitHub project's Logo and bilingual English/Chinese Cover, Social Preview, and promotional card.
+Use $generate-github-cover to create or update this GitHub project's Logo and English Cover, Social Preview, and Promo images.
 ```
 
 The Skill reads repository guidance, READMEs, package metadata, entry points,
@@ -78,27 +78,26 @@ configuration, and existing visuals before writing copy or choosing visual
 metaphors. It generates files only unless the user explicitly requests README,
 GitHub settings, commit, or remote updates.
 
-English is the unsuffixed default and Simplified Chinese uses `-zh`. An
-explicit locale set replaces this default; ask to add or retain a language
-when it should be generated alongside English and Chinese.
+When no language is requested, the Skill generates only English. An explicit
+locale set replaces that default; ask to add or retain languages when existing
+locales should remain. English uses unsuffixed filenames by default, while
+Simplified Chinese uses `-zh` when English remains the default locale.
 
 ## Repository layout
 
-```text
-assets/                          Project showcase and generated artwork
-plugins/generate-github-cover/  Installable Codex Plugin
-  .codex-plugin/plugin.json
-  skills/generate-github-cover/
-    SKILL.md                     Agent workflow
-    scripts/                     Renderers and style registry
-    references/                 Style-authoring guidance
-    styles/
-      cover/clean-editorial/    Cover manifest, reference, and templates
-      logo/clean-geometric/     Logo manifest and reference
-.agents/plugins/marketplace.json
-.github/workflows/release.yml    Tag-triggered release automation
-tools/package_skill.py           Reproducible Skill packager
-```
+| Path | Purpose |
+| --- | --- |
+| `assets/` | Project showcase and generated artwork |
+| `plugins/generate-github-cover/` | Installable Codex Plugin |
+| `plugins/generate-github-cover/.codex-plugin/plugin.json` | Plugin manifest |
+| `plugins/generate-github-cover/skills/generate-github-cover/SKILL.md` | Agent workflow |
+| `plugins/generate-github-cover/skills/generate-github-cover/scripts/` | Renderers and style registry |
+| `plugins/generate-github-cover/skills/generate-github-cover/references/` | Style-authoring guidance |
+| `plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/` | Cover manifest, reference, and templates |
+| `plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/` | Logo manifest and reference |
+| `.agents/plugins/marketplace.json` | Repository marketplace entry |
+| `.github/workflows/release.yml` | Tag-triggered release automation |
+| `tools/package_skill.py` | Reproducible Skill packager |
 
 Reusable templates live inside their self-contained Cover style, not the root
 `assets/` directory. Cover and Logo styles are discovered independently, so a
@@ -107,9 +106,10 @@ central registry.
 
 ## Cover specification
 
-Create `assets/<repo-slug>-cover.json` in the target repository. The top level
-holds project identity and `locales` holds all translatable Cover and Promo
-copy:
+The Skill creates `assets/<repo-slug>-cover.json` as the editable source of
+truth for generated artwork. Top-level fields hold project identity and style
+selection, while `locales` holds all translatable Cover, Social Preview, and
+Promo copy. The default English-only configuration looks like this:
 
 ```json
 {
@@ -126,40 +126,43 @@ copy:
       "language": "en",
       "cover": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A short concrete statement,", "completed on line two."]
+        "description_lines": [
+          "A short concrete statement,",
+          "completed on line two."
+        ]
       },
       "social_preview": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A longer supporting statement for the wider layout,", "completed naturally on line two."]
+        "description_lines": [
+          "A longer supporting statement for the wider layout,",
+          "completed naturally on line two."
+        ]
       },
       "promo": {
         "headline": "A concise statement for sharing the project.",
-        "description_lines": ["A concrete supporting statement,", "completed naturally on line two."],
+        "description_lines": [
+          "A concrete supporting statement,",
+          "completed naturally on line two."
+        ],
         "notice": "A short, accurate usage note",
         "cta": "View the project"
       }
-    },
-    "zh": {
-      "language": "zh-CN",
-      "cover": {
-        "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行简要说明项目能力，", "第二行自然完成同一句说明。"]
-      },
-      "social_preview": {
-        "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行完整说明项目定位与核心能力，", "第二行自然完成同一句说明。"]
-      },
-      "promo": {
-        "headline": "一句适合分享的中文项目价值陈述",
-        "description_lines": ["第一行具体说明项目能力，", "第二行自然完成同一句说明。"],
-        "notice": "简短、准确的使用说明",
-        "cta": "扫码查看项目"
-      }
     }
   },
-  "source_files": ["AGENTS.md", "README.md", "pyproject.toml", "src/example/cli.py"]
+  "source_files": [
+    "AGENTS.md",
+    "README.md",
+    "pyproject.toml",
+    "src/example/cli.py"
+  ]
 }
 ```
+
+To revise generated copy, edit `headline`, the two `description_lines`,
+`notice`, or `cta` under the relevant locale, then rerun `render --force` and
+`validate`. Template changes are not required for copy edits. Every locale must
+remain complete, and each `description_lines` array must contain exactly two
+strings.
 
 `source_files` is provenance: list only repository-relative files that were
 actually read and used. It does not make the renderer load those files. Exclude

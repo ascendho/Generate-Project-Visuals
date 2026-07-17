@@ -15,7 +15,7 @@
   <img src="assets/generate-project-visuals-cover-zh.png" alt="生成项目视觉资产中文封面" width="100%">
 </p>
 
-Generate Project Visuals 是一个 Codex Plugin 和可独立安装的 Skill。它会读取仓库并生成项目 Logo Mark、Logo Lockup、中英文 README 封面、`1280×640` Social Preview 和 `16:9` 宣传图。所有公开图片都按精确尺寸输出为 PNG；SVG 仅用于 Skill 内置模板和 `/tmp` 中的临时 Logo 方案。其它语言只在用户明确提出时生成。
+Generate Project Visuals 是一个 Codex Plugin 和可独立安装的 Skill。它会读取仓库并生成项目 Logo Mark、Logo Lockup、README Cover、`1280×640` Social Preview 和 `16:9` 宣传图。默认只生成英文图片；其它语言仅在用户明确指定或现有配置已经包含时生成。所有公开图片都按精确尺寸输出为 PNG；SVG 仅用于 Skill 内置模板和 `/tmp` 中的临时 Logo 方案。
 
 项目品牌名为 **Generate Project Visuals**，稳定的 Plugin、Skill 和调用名称仍为 `generate-github-cover`。
 
@@ -59,36 +59,34 @@ unzip generate-github-cover-vX.Y.Z.zip -d "$HOME/.agents/skills"
 ## 使用
 
 ```text
-请使用 generate-github-cover skill，为当前 GitHub 项目生成或更新 Logo，以及中英文 Cover、Social Preview 和宣传图
+请使用 $generate-github-cover，为当前 GitHub 项目生成或更新 Logo，以及中英文 Cover、Social Preview 和宣传图。
 ```
 
 Skill 会先读取仓库规则、README、包配置、入口代码、相关配置和现有视觉素材，再编写文案和选择视觉隐喻。默认只生成文件；只有用户明确提出时，才会同步 README、GitHub 设置、提交或远程仓库。
 
-默认无后缀文件为英文，简体中文使用 `-zh`。用户明确指定语言集合时，该集合替换默认中英文；如需扩展默认集合，应明确要求“追加”或“保留”语言。
+未指定语言时，Skill 只生成英文。上面的调用示例明确要求中英文，因此会生成 `en` 和 `zh` 两套图片。用户指定语言集合时，该集合替换英文默认值；如果需要保留现有语言，应明确要求“追加”或“保留”。英文默认使用无后缀文件名，以英文为默认语言时，简体中文使用 `-zh`。
 
 ## 仓库结构
 
-```text
-assets/                          本项目展示与生成素材
-plugins/generate-github-cover/  可安装的 Codex Plugin
-  .codex-plugin/plugin.json
-  skills/generate-github-cover/
-    SKILL.md                     Agent 工作流
-    scripts/                     渲染器与风格注册器
-    references/                 新增风格说明
-    styles/
-      cover/clean-editorial/    Cover manifest、参考与模板
-      logo/clean-geometric/     Logo manifest 与参考
-.agents/plugins/marketplace.json
-.github/workflows/release.yml    标签触发的自动发布流程
-tools/package_skill.py           可复现 Skill 打包工具
-```
+| 路径 | 用途 |
+| --- | --- |
+| `assets/` | 本项目展示与生成素材 |
+| `plugins/generate-github-cover/` | 可安装的 Codex Plugin |
+| `plugins/generate-github-cover/.codex-plugin/plugin.json` | Plugin 清单 |
+| `plugins/generate-github-cover/skills/generate-github-cover/SKILL.md` | Agent 工作流 |
+| `plugins/generate-github-cover/skills/generate-github-cover/scripts/` | 渲染器与风格注册器 |
+| `plugins/generate-github-cover/skills/generate-github-cover/references/` | 新增风格说明 |
+| `plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/` | Cover manifest、参考与模板 |
+| `plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/` | Logo manifest 与参考 |
+| `.agents/plugins/marketplace.json` | 仓库 Marketplace 条目 |
+| `.github/workflows/release.yml` | 标签触发的自动发布流程 |
+| `tools/package_skill.py` | 可复现 Skill 打包工具 |
 
 可复用模板位于自包含 Skill 的 Cover 风格目录中，不再放在根 `assets/`。Cover 与 Logo 风格会被分别自动发现，因此未来新增风格只需添加新的 manifest 风格目录，不需要维护中央注册表。
 
 ## Cover 配置
 
-在目标仓库创建 `assets/<repo-slug>-cover.json`。顶层保存项目身份，`locales` 保存全部可翻译的 Cover 和 Promo 文案：
+Skill 会创建 `assets/<repo-slug>-cover.json`，作为生成图片时可编辑、可复现的源配置。顶层字段保存项目身份与风格选择，`locales` 保存 Cover、Social Preview 和 Promo 的可翻译文案。下面的示例显式配置了中英文两套内容：
 
 ```json
 {
@@ -105,15 +103,24 @@ tools/package_skill.py           可复现 Skill 打包工具
       "language": "en",
       "cover": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A short concrete statement,", "completed on line two."]
+        "description_lines": [
+          "A short concrete statement,",
+          "completed on line two."
+        ]
       },
       "social_preview": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A longer supporting statement for the wider layout,", "completed naturally on line two."]
+        "description_lines": [
+          "A longer supporting statement for the wider layout,",
+          "completed naturally on line two."
+        ]
       },
       "promo": {
         "headline": "A concise statement for sharing the project.",
-        "description_lines": ["A concrete supporting statement,", "completed naturally on line two."],
+        "description_lines": [
+          "A concrete supporting statement,",
+          "completed naturally on line two."
+        ],
         "notice": "A short, accurate usage note",
         "cta": "View the project"
       }
@@ -122,23 +129,39 @@ tools/package_skill.py           可复现 Skill 打包工具
       "language": "zh-CN",
       "cover": {
         "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行简要说明项目能力，", "第二行自然完成同一句说明。"]
+        "description_lines": [
+          "第一行简要说明项目能力，",
+          "第二行自然完成同一句说明。"
+        ]
       },
       "social_preview": {
         "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行完整说明项目定位与核心能力，", "第二行自然完成同一句说明。"]
+        "description_lines": [
+          "第一行完整说明项目定位与核心能力，",
+          "第二行自然完成同一句说明。"
+        ]
       },
       "promo": {
         "headline": "一句适合分享的中文项目价值陈述",
-        "description_lines": ["第一行具体说明项目能力，", "第二行自然完成同一句说明。"],
+        "description_lines": [
+          "第一行具体说明项目能力，",
+          "第二行自然完成同一句说明。"
+        ],
         "notice": "简短、准确的使用说明",
         "cta": "扫码查看项目"
       }
     }
   },
-  "source_files": ["AGENTS.md", "README.md", "pyproject.toml", "src/example/cli.py"]
+  "source_files": [
+    "AGENTS.md",
+    "README.md",
+    "pyproject.toml",
+    "src/example/cli.py"
+  ]
 }
 ```
+
+如果 AI 生成的文案不合适，可以直接修改对应语言下的 `headline`、两条 `description_lines`、`notice` 或 `cta`，然后重新执行 `render --force` 和 `validate`。只修改文案时不需要编辑模板；每个语言配置必须保持完整，`description_lines` 必须始终包含两个字符串。
 
 `source_files` 是来源记录，只填写已经读取并实际用于定位或文案的仓库相对路径；它不会让渲染器自动读取文件。不要加入秘密、缓存、生成物或无关文件。
 

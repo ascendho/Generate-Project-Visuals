@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Generate Project Visuals",
-    "shortDescription": "Create logos, bilingual covers, and social artwork.",
-    "longDescription": "Analyze a repository and produce PNG-only logos, English and Chinese covers, exact-size social previews, and promotional artwork.",
+    "shortDescription": "Create logos, covers, and social artwork.",
+    "longDescription": "Analyze a repository and produce PNG-only logos, English visual assets by default, and requested localized variants.",
     "developerName": "ascendho",
     "category": "Productivity",
     "capabilities": [
@@ -28,7 +28,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Create this project's logo and bilingual visual asset set."
+      "Create this project's logo and English visual asset set."
     ],
     "brandColor": "#2855D9",
     "composerIcon": "./assets/icon.png",

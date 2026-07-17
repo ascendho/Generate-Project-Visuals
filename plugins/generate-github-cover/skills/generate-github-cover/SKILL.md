@@ -1,6 +1,6 @@
 ---
 name: generate-github-cover
-description: Analyze a GitHub repository and generate PNG-only project Logo Mark and Logo Lockup assets plus complete localized sets of README Covers, 1280x640 Social Previews, and 16:9 Promo images. Generate English and Simplified Chinese artwork by default, or honor an explicitly requested locale set. Use for requests to create, refresh, localize, or standardize project logos, repository banners, Open Graph images, social cards, project Covers, or shareable project artwork from repository evidence without asking an image model to typeset the artwork.
+description: Analyze a GitHub repository and generate PNG-only Logo Mark, Logo Lockup, README Cover, 1280x640 Social Preview, and 16:9 Promo assets. Generate English artwork by default and additional or alternative locales only when explicitly requested or already configured. Use for requests to create, refresh, localize, or standardize project logos, repository banners, Open Graph images, social cards, Covers, or shareable project artwork from repository evidence.
 ---
 
 # Generate GitHub Cover
@@ -78,11 +78,13 @@ Write `assets/<slug>-cover.json` with `schema_version: 4`, explicit
 `cover_style` and `logo_style`, the approved Lockup PNG path, and all copy under
 `locales`. Use `source_files` only as provenance for files actually read.
 
-When languages are not specified, create complete `en` and `zh` entries with
-`language: en`, `language: zh-CN`, and `default_locale: en`. When the user names
-a language set, generate exactly that set. Preserve existing locales only when
-the user asks to add, retain, or include them; translated documentation alone
-does not authorize extra locales.
+For a new specification with no requested languages, create only a complete
+`en` entry with `language: en` and `default_locale: en`. Treat locales already
+present in an existing specification as explicitly configured and preserve
+them. When the user names a language set, generate exactly that set unless the
+user asks to add, retain, or include languages. Use `en` as `default_locale`
+when present; otherwise use the first language the user names. Translated
+documentation alone does not authorize extra locales.
 
 Each locale needs one concise positioning headline and exactly two supporting
 lines for Cover and Promo. Optional `social_preview` copy falls back to Cover.
