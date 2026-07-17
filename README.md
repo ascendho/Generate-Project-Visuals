@@ -18,8 +18,9 @@
 Generate Project Visuals is a Codex Plugin and standalone Skill that reads a
 repository and creates its Logo Mark, Logo Lockup, English and Simplified
 Chinese README Covers, `1280x640` Social Previews, and `16:9` Promo images.
-SVG remains editable and PNG is exported at exact dimensions. Other languages
-are generated only when explicitly requested.
+Every public image is exported as PNG at an exact size; SVG is limited to
+bundled templates and temporary Logo concepts. Other languages are generated
+only when explicitly requested.
 
 The project brand is **Generate Project Visuals**. The stable Plugin, Skill,
 and invocation name remains `generate-github-cover`.
@@ -50,6 +51,21 @@ Ask Codex:
 ```text
 Use $skill-installer to install the skill from https://github.com/ascendho/Generate-Project-Visuals/tree/master/plugins/generate-github-cover/skills/generate-github-cover
 ```
+
+### Local development link
+
+For an editable checkout, run this from the repository root to link the bundled
+Skill into the user Skill directory:
+
+```sh
+mkdir -p "$HOME/.agents/skills"
+ln -s "$PWD/plugins/generate-github-cover/skills/generate-github-cover" \
+  "$HOME/.agents/skills/generate-github-cover"
+```
+
+Edits in this checkout are then used immediately. Run `git pull` here to sync
+remote changes. Start a new Codex thread or restart Codex if an update is not
+detected; recreate the link if the repository is moved.
 
 ### Release archive
 
@@ -89,17 +105,20 @@ plugins/generate-github-cover/  Installable Codex Plugin
   .codex-plugin/plugin.json
   skills/generate-github-cover/
     SKILL.md                     Agent workflow
-    scripts/                     Deterministic renderers
-    references/                 Schema and visual rules
-    templates/                  Stable SVG templates
+    scripts/                     Renderers and style registry
+    references/                 Style-authoring guidance
+    styles/
+      cover/clean-editorial/    Cover manifest, reference, and templates
+      logo/clean-geometric/     Logo manifest and reference
 .agents/plugins/marketplace.json
 .github/workflows/release.yml    Tag-triggered release automation
 tools/package_skill.py           Reproducible Skill packager
 ```
 
-Templates live inside the self-contained Skill, not the root `assets/`
-directory. This keeps installed copies complete while separating reusable
-templates from this repository's own branding.
+Reusable templates live inside their self-contained Cover style, not the root
+`assets/` directory. Cover and Logo styles are discovered independently, so a
+new style can be added as another manifest-backed directory without changing a
+central registry.
 
 ## Cover specification
 
@@ -109,12 +128,13 @@ copy:
 
 ```json
 {
-  "schema_version": 3,
-  "style": "clean-editorial",
+  "schema_version": 4,
+  "cover_style": "clean-editorial",
+  "logo_style": "clean-geometric",
   "repository_slug": "example-project",
   "project_name": "Example Project",
   "project_url": "https://github.com/owner/example-project",
-  "logo_lockup": "example-project-logo-lockup.svg",
+  "logo_lockup": "example-project-logo-lockup.png",
   "default_locale": "en",
   "locales": {
     "en": {
@@ -179,12 +199,10 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<repo-slug>-cover.json --output-dir assets
 ```
 
-The default locale produces `<slug>-cover.svg/png`,
-`<slug>-social-preview.png`, and `<slug>-promo.svg/png`. Additional locales use
-`-<locale>` suffixes. Use the `rasterize` command after manually editing an SVG
-to refresh its PNG without rewriting the SVG. Rasterizing a Cover updates only
-its Cover PNG; Social Preview is rendered separately by the full `render`
-command.
+The default locale produces `<slug>-cover.png`,
+`<slug>-social-preview.png`, and `<slug>-promo.png`. Additional locales use
+`-<locale>` suffixes. Copy changes belong in the JSON specification and are
+applied by the full `render` command.
 
 ## Develop a Logo
 
@@ -195,6 +213,7 @@ Create exactly three temporary Mark concepts named `concept-a.svg`,
 SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
 
 python "$SKILL_DIR/scripts/render_logo.py" preview \
+  --style clean-geometric \
   --project-name "Example Project" \
   --slug example-project \
   --input-dir /tmp/example-project-logo-source \
@@ -207,17 +226,18 @@ After the user selects one concept, render and validate it:
 SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
 
 python "$SKILL_DIR/scripts/render_logo.py" render \
+  --style clean-geometric \
   --project-name "Example Project" \
   --slug example-project \
   --mark /tmp/example-project-logo-source/concept-a.svg \
   --output-dir assets
 
 python "$SKILL_DIR/scripts/render_logo.py" validate \
-  --slug example-project --output-dir assets
+  --style clean-geometric --slug example-project --output-dir assets
 ```
 
-This produces an editable `512x512` Mark, transparent `1024x1024` Mark PNG,
-editable `1600x400` Lockup, and transparent `3200x800` Lockup PNG.
+This produces only a transparent `1024x1024` Mark PNG and transparent
+`3200x800` Lockup PNG. The temporary concept SVGs stay under `/tmp`.
 
 ## Releases
 

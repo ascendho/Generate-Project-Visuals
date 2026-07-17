@@ -15,7 +15,7 @@
   <img src="assets/generate-project-visuals-cover-zh.png" alt="生成项目视觉资产中文封面" width="100%">
 </p>
 
-Generate Project Visuals 是一个 Codex Plugin 和可独立安装的 Skill。它会读取仓库并生成项目 Logo Mark、Logo Lockup、中英文 README 封面、`1280×640` Social Preview 和 `16:9` 宣传图。SVG 保持可编辑，PNG 按目标尺寸精确输出；其它语言只在用户明确提出时生成。
+Generate Project Visuals 是一个 Codex Plugin 和可独立安装的 Skill。它会读取仓库并生成项目 Logo Mark、Logo Lockup、中英文 README 封面、`1280×640` Social Preview 和 `16:9` 宣传图。所有公开图片都按精确尺寸输出为 PNG；SVG 仅用于 Skill 内置模板和 `/tmp` 中的临时 Logo 方案。其它语言只在用户明确提出时生成。
 
 项目品牌名为 **Generate Project Visuals**，稳定的 Plugin、Skill 和调用名称仍为 `generate-github-cover`。
 
@@ -44,6 +44,18 @@ codex plugin add generate-github-cover@generate-project-visuals
 ```text
 请使用 $skill-installer，从 https://github.com/ascendho/Generate-Project-Visuals/tree/master/plugins/generate-github-cover/skills/generate-github-cover 安装这个 Skill
 ```
+
+### 本地开发软链接
+
+如果需要持续修改 Skill，可在仓库根目录运行以下命令，将仓库内的 Skill 链接到用户 Skill 目录：
+
+```sh
+mkdir -p "$HOME/.agents/skills"
+ln -s "$PWD/plugins/generate-github-cover/skills/generate-github-cover" \
+  "$HOME/.agents/skills/generate-github-cover"
+```
+
+之后本仓库中的修改会直接生效；要同步远端更新，只需在本仓库执行 `git pull`。如果 Codex 未识别更新，请新建会话或重启 Codex；移动仓库后需要重新创建软链接。
 
 ### Release 压缩包
 
@@ -74,15 +86,17 @@ plugins/generate-github-cover/  可安装的 Codex Plugin
   .codex-plugin/plugin.json
   skills/generate-github-cover/
     SKILL.md                     Agent 工作流
-    scripts/                     确定性渲染器
-    references/                 Schema 与视觉规则
-    templates/                  稳定 SVG 模板
+    scripts/                     渲染器与风格注册器
+    references/                 新增风格说明
+    styles/
+      cover/clean-editorial/    Cover manifest、参考与模板
+      logo/clean-geometric/     Logo manifest 与参考
 .agents/plugins/marketplace.json
 .github/workflows/release.yml    标签触发的自动发布流程
 tools/package_skill.py           可复现 Skill 打包工具
 ```
 
-模板位于自包含 Skill 的 `templates/`，不再放在根 `assets/`。这样既能保证安装包完整，也能将复用模板与本项目自身宣传素材分开。
+可复用模板位于自包含 Skill 的 Cover 风格目录中，不再放在根 `assets/`。Cover 与 Logo 风格会被分别自动发现，因此未来新增风格只需添加新的 manifest 风格目录，不需要维护中央注册表。
 
 ## Cover 配置
 
@@ -90,12 +104,13 @@ tools/package_skill.py           可复现 Skill 打包工具
 
 ```json
 {
-  "schema_version": 3,
-  "style": "clean-editorial",
+  "schema_version": 4,
+  "cover_style": "clean-editorial",
+  "logo_style": "clean-geometric",
   "repository_slug": "example-project",
   "project_name": "Example Project",
   "project_url": "https://github.com/owner/example-project",
-  "logo_lockup": "example-project-logo-lockup.svg",
+  "logo_lockup": "example-project-logo-lockup.png",
   "default_locale": "en",
   "locales": {
     "en": {
@@ -155,7 +170,7 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<repo-slug>-cover.json --output-dir assets
 ```
 
-默认语言生成 `<slug>-cover.svg/png`、`<slug>-social-preview.png` 和 `<slug>-promo.svg/png`；其它语言使用 `-<locale>` 后缀。手动修改 SVG 后使用 `rasterize` 命令，可以只更新 PNG 而不覆盖 SVG。对 Cover 执行 `rasterize` 只更新对应 Cover PNG；Social Preview 由完整的 `render` 命令独立生成。
+默认语言生成 `<slug>-cover.png`、`<slug>-social-preview.png` 和 `<slug>-promo.png`；其它语言使用 `-<locale>` 后缀。文案修改统一写入 JSON 配置，并通过完整的 `render` 命令应用。
 
 ## 设计 Logo
 
@@ -165,6 +180,7 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
 SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
 
 python "$SKILL_DIR/scripts/render_logo.py" preview \
+  --style clean-geometric \
   --project-name "Example Project" \
   --slug example-project \
   --input-dir /tmp/example-project-logo-source \
@@ -177,16 +193,17 @@ python "$SKILL_DIR/scripts/render_logo.py" preview \
 SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
 
 python "$SKILL_DIR/scripts/render_logo.py" render \
+  --style clean-geometric \
   --project-name "Example Project" \
   --slug example-project \
   --mark /tmp/example-project-logo-source/concept-a.svg \
   --output-dir assets
 
 python "$SKILL_DIR/scripts/render_logo.py" validate \
-  --slug example-project --output-dir assets
+  --style clean-geometric --slug example-project --output-dir assets
 ```
 
-最终生成可编辑的 `512×512` Mark、透明 `1024×1024` Mark PNG、可编辑的 `1600×400` Lockup，以及透明 `3200×800` Lockup PNG。
+最终只生成透明 `1024×1024` Mark PNG 和透明 `3200×800` Lockup PNG；临时方案 SVG 始终保留在 `/tmp`。
 
 ## 自动发布
 
