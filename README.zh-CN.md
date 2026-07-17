@@ -45,21 +45,9 @@ codex plugin add generate-github-cover@generate-project-visuals
 请使用 $skill-installer，从 https://github.com/ascendho/Generate-Project-Visuals/tree/master/plugins/generate-github-cover/skills/generate-github-cover 安装这个 Skill
 ```
 
-### 本地开发软链接
-
-如果需要持续修改 Skill，可在仓库根目录运行以下命令，将仓库内的 Skill 链接到用户 Skill 目录：
-
-```sh
-mkdir -p "$HOME/.agents/skills"
-ln -s "$PWD/plugins/generate-github-cover/skills/generate-github-cover" \
-  "$HOME/.agents/skills/generate-github-cover"
-```
-
-之后本仓库中的修改会直接生效；要同步远端更新，只需在本仓库执行 `git pull`。如果 Codex 未识别更新，请新建会话或重启 Codex；移动仓库后需要重新创建软链接。
-
 ### Release 压缩包
 
-从[最新 Release](https://github.com/ascendho/Generate-Project-Visuals/releases/latest)下载 `generate-github-cover-vX.Y.Z.zip`，使用 `.sha256` 文件校验后解压到用户 Skill 目录：
+从 [最新 Release](https://github.com/ascendho/Generate-Project-Visuals/releases/latest) 下载 `generate-github-cover-vX.Y.Z.zip`，使用 `.sha256` 文件校验后解压到用户 Skill 目录：
 
 ```sh
 mkdir -p "$HOME/.agents/skills"

@@ -52,21 +52,6 @@ Ask Codex:
 Use $skill-installer to install the skill from https://github.com/ascendho/Generate-Project-Visuals/tree/master/plugins/generate-github-cover/skills/generate-github-cover
 ```
 
-### Local development link
-
-For an editable checkout, run this from the repository root to link the bundled
-Skill into the user Skill directory:
-
-```sh
-mkdir -p "$HOME/.agents/skills"
-ln -s "$PWD/plugins/generate-github-cover/skills/generate-github-cover" \
-  "$HOME/.agents/skills/generate-github-cover"
-```
-
-Edits in this checkout are then used immediately. Run `git pull` here to sync
-remote changes. Start a new Codex thread or restart Codex if an update is not
-detected; recreate the link if the repository is moved.
-
 ### Release archive
 
 Download `generate-github-cover-vX.Y.Z.zip` from the
