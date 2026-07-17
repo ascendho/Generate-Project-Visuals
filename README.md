@@ -25,6 +25,18 @@ only when explicitly requested or already configured.
 The project brand is **Generate Project Visuals**. The stable Plugin, Skill,
 and invocation name remains `generate-github-cover`.
 
+## How it works
+
+1. The Skill reads repository guidance, documentation, metadata, entry points,
+   configuration, and existing visuals to determine the project's positioning.
+2. It creates three temporary Logo Mark directions outside the repository and
+   presents them for the user to choose from.
+3. After the user selects a direction, it renders and validates the final Logo
+   Mark and Logo Lockup.
+4. It writes an editable Cover configuration, then renders and validates the
+   README Cover, Social Preview, and Promo images in English by default or in
+   the explicitly requested languages.
+
 ## Install
 
 The renderer requires Python 3.10+, Playwright, Segno, and Chromium:
@@ -41,24 +53,20 @@ codex plugin marketplace add ascendho/Generate-Project-Visuals --ref master
 codex plugin add generate-github-cover@generate-project-visuals
 ```
 
-Start a new Codex thread after installation, then invoke
-`$generate-github-cover` or describe a matching visual-generation task.
+The first command registers this GitHub repository as a marketplace source;
+the second installs the Plugin from that source. This does not require a
+listing in the public Plugins Directory. Start a new Codex thread after
+installation, then invoke `$generate-github-cover` or describe a matching
+visual-generation task.
 
-### Skill Installer
-
-Ask Codex:
-
-```text
-Use $skill-installer to install the skill from https://github.com/ascendho/Generate-Project-Visuals/tree/master/plugins/generate-github-cover/skills/generate-github-cover
-```
-
-### Release archive
+### Release archive (standalone fallback)
 
 Download `generate-github-cover-vX.Y.Z.zip` from the
 [latest Release](https://github.com/ascendho/Generate-Project-Visuals/releases/latest),
 verify its `.sha256` file, and extract it into the user Skill directory:
 
 ```sh
+shasum -a 256 -c generate-github-cover-vX.Y.Z.zip.sha256
 mkdir -p "$HOME/.agents/skills"
 unzip generate-github-cover-vX.Y.Z.zip -d "$HOME/.agents/skills"
 ```
@@ -83,80 +91,15 @@ locale set replaces that default; ask to add or retain languages when existing
 locales should remain. English uses unsuffixed filenames by default, while
 Simplified Chinese uses `-zh` when English remains the default locale.
 
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `assets/` | Project showcase and generated artwork |
-| `plugins/generate-github-cover/` | Installable Codex Plugin |
-| `plugins/generate-github-cover/.codex-plugin/plugin.json` | Plugin manifest |
-| `plugins/generate-github-cover/skills/generate-github-cover/SKILL.md` | Agent workflow |
-| `plugins/generate-github-cover/skills/generate-github-cover/scripts/` | Renderers and style registry |
-| `plugins/generate-github-cover/skills/generate-github-cover/references/` | Style-authoring guidance |
-| `plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/` | Cover manifest, reference, and templates |
-| `plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/` | Logo manifest and reference |
-| `.agents/plugins/marketplace.json` | Repository marketplace entry |
-| `.github/workflows/release.yml` | Tag-triggered release automation |
-| `tools/package_skill.py` | Reproducible Skill packager |
-
-Reusable templates live inside their self-contained Cover style, not the root
-`assets/` directory. Cover and Logo styles are discovered independently, so a
-new style can be added as another manifest-backed directory without changing a
-central registry.
-
 ## Cover specification
 
 The Skill creates `assets/<repo-slug>-cover.json` as the editable source of
 truth for generated artwork. Top-level fields hold project identity and style
 selection, while `locales` holds all translatable Cover, Social Preview, and
-Promo copy. The default English-only configuration looks like this:
-
-```json
-{
-  "schema_version": 4,
-  "cover_style": "clean-editorial",
-  "logo_style": "clean-geometric",
-  "repository_slug": "example-project",
-  "project_name": "Example Project",
-  "project_url": "https://github.com/owner/example-project",
-  "logo_lockup": "example-project-logo-lockup.png",
-  "default_locale": "en",
-  "locales": {
-    "en": {
-      "language": "en",
-      "cover": {
-        "headline": "A concise editorial statement of the project's value.",
-        "description_lines": [
-          "A short concrete statement,",
-          "completed on line two."
-        ]
-      },
-      "social_preview": {
-        "headline": "A concise editorial statement of the project's value.",
-        "description_lines": [
-          "A longer supporting statement for the wider layout,",
-          "completed naturally on line two."
-        ]
-      },
-      "promo": {
-        "headline": "A concise statement for sharing the project.",
-        "description_lines": [
-          "A concrete supporting statement,",
-          "completed naturally on line two."
-        ],
-        "notice": "A short, accurate usage note",
-        "cta": "View the project"
-      }
-    }
-  },
-  "source_files": [
-    "AGENTS.md",
-    "README.md",
-    "pyproject.toml",
-    "src/example/cli.py"
-  ]
-}
-```
+Promo copy. It is generated automatically, so users do not need to create it
+before invoking the Skill. See the [English-only example](examples/cover-config.en.json)
+or [English and Simplified Chinese example](examples/cover-config.en-zh.json)
+for the complete schema.
 
 To revise generated copy, edit `headline`, the two `description_lines`,
 `notice`, or `cta` under the relevant locale, then rerun `render --force` and
@@ -173,12 +116,15 @@ supporting lines short for the right column. Optional `social_preview` copy
 uses the same shape and falls back to `cover`; use it when the unchanged
 `1280x640` Social Preview needs longer wording.
 
-## Render and validate
+## Edit copy and regenerate
 
-When developing from this checkout:
+The Skill normally writes the configuration and runs the renderers for you. If
+the generated copy needs work, ask the Skill to revise and regenerate it, or
+edit the relevant locale in `assets/<repo-slug>-cover.json` yourself. Users of
+the standalone Release archive can then run:
 
 ```sh
-SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
+SKILL_DIR="$HOME/.agents/skills/generate-github-cover"
 
 python "$SKILL_DIR/scripts/render_cover.py" render \
   assets/<repo-slug>-cover.json --output-dir assets --force
@@ -187,45 +133,9 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<repo-slug>-cover.json --output-dir assets
 ```
 
-The default locale produces `<slug>-cover.png`,
-`<slug>-social-preview.png`, and `<slug>-promo.png`. Additional locales use
-`-<locale>` suffixes. Copy changes belong in the JSON specification and are
-applied by the full `render` command.
-
-## Develop a Logo
-
-Create exactly three temporary Mark concepts named `concept-a.svg`,
-`concept-b.svg`, and `concept-c.svg`, then preview them:
-
-```sh
-SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
-
-python "$SKILL_DIR/scripts/render_logo.py" preview \
-  --style clean-geometric \
-  --project-name "Example Project" \
-  --slug example-project \
-  --input-dir /tmp/example-project-logo-source \
-  --output-dir /tmp/example-project-logo-preview
-```
-
-After the user selects one concept, render and validate it:
-
-```sh
-SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
-
-python "$SKILL_DIR/scripts/render_logo.py" render \
-  --style clean-geometric \
-  --project-name "Example Project" \
-  --slug example-project \
-  --mark /tmp/example-project-logo-source/concept-a.svg \
-  --output-dir assets
-
-python "$SKILL_DIR/scripts/render_logo.py" validate \
-  --style clean-geometric --slug example-project --output-dir assets
-```
-
-This produces only a transparent `1024x1024` Mark PNG and transparent
-`3200x800` Lockup PNG. The temporary concept SVGs stay under `/tmp`.
+`--force` intentionally replaces the existing generated PNGs. `validate`
+checks the expected files and exact dimensions. The default locale uses
+unsuffixed filenames; additional locales use `-<locale>` suffixes.
 
 ## Releases
 
@@ -235,7 +145,7 @@ tag runs the GitHub Actions workflow and publishes both files automatically:
 
 ```sh
 # First update plugin.json to the same semantic version and commit it.
-git tag v0.2.0
+git tag -a v0.2.0 -m "Generate Project Visuals v0.2.0"
 git push origin v0.2.0
 ```
 

@@ -1,0 +1,71 @@
+{
+  "schema_version": 4,
+  "cover_style": "clean-editorial",
+  "logo_style": "clean-geometric",
+  "repository_slug": "example-project",
+  "project_name": "Example Project",
+  "project_url": "https://github.com/owner/example-project",
+  "logo_lockup": "example-project-logo-lockup.png",
+  "default_locale": "en",
+  "locales": {
+    "en": {
+      "language": "en",
+      "cover": {
+        "headline": "A concise editorial statement of the project's value.",
+        "description_lines": [
+          "A short concrete statement,",
+          "completed on line two."
+        ]
+      },
+      "social_preview": {
+        "headline": "A concise editorial statement of the project's value.",
+        "description_lines": [
+          "A longer supporting statement for the wider layout,",
+          "completed naturally on line two."
+        ]
+      },
+      "promo": {
+        "headline": "A concise statement for sharing the project.",
+        "description_lines": [
+          "A concrete supporting statement,",
+          "completed naturally on line two."
+        ],
+        "notice": "A short, accurate usage note",
+        "cta": "View the project"
+      }
+    },
+    "zh": {
+      "language": "zh-CN",
+      "cover": {
+        "headline": "一句简洁的中文项目价值陈述",
+        "description_lines": [
+          "第一行简要说明项目能力，",
+          "第二行自然完成同一句说明。"
+        ]
+      },
+      "social_preview": {
+        "headline": "一句简洁的中文项目价值陈述",
+        "description_lines": [
+          "第一行完整说明项目定位与核心能力，",
+          "第二行自然完成同一句说明。"
+        ]
+      },
+      "promo": {
+        "headline": "一句适合分享的中文项目价值陈述",
+        "description_lines": [
+          "第一行具体说明项目能力，",
+          "第二行自然完成同一句说明。"
+        ],
+        "notice": "简短、准确的使用说明",
+        "cta": "扫码查看项目"
+      }
+    }
+  },
+  "source_files": [
+    "AGENTS.md",
+    "README.md",
+    "README.zh-CN.md",
+    "pyproject.toml",
+    "src/example/cli.py"
+  ]
+}
