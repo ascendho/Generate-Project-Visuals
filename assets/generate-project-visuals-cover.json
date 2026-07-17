@@ -12,6 +12,13 @@
       "cover": {
         "headline": "A polished presence for every project.",
         "description_lines": [
+          "Repository to polished visual identity.",
+          "Logo · Bilingual Covers · Social · Promo"
+        ]
+      },
+      "social_preview": {
+        "headline": "A polished presence for every project.",
+        "description_lines": [
           "Read the repository and generate its Logo plus English and Chinese Covers,",
           "then export exact-size Social Preview and Promo images."
         ]
@@ -29,6 +36,13 @@
     "zh": {
       "language": "zh-CN",
       "cover": {
+        "headline": "让每个项目呈现更完整的专业形象",
+        "description_lines": [
+          "读取仓库内容，生成完整视觉形象",
+          "Logo · 中英文封面 · Social · 宣传图"
+        ]
+      },
+      "social_preview": {
         "headline": "让每个项目呈现更完整的专业形象",
         "description_lines": [
           "读取仓库内容，生成项目 Logo 与中英文封面，",

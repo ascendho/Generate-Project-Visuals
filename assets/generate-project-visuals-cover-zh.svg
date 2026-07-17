@@ -2,7 +2,7 @@
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
   height="100%"
-  viewBox="0 0 2048 1024"
+  viewBox="0 0 2000 400"
   preserveAspectRatio="xMidYMid meet"
   lang="zh-CN"
   xml:lang="zh-CN"
@@ -11,45 +11,40 @@
   aria-labelledby="title description"
 >
   <title id="title">Generate Project Visuals</title>
-  <desc id="description">让每个项目呈现更完整的专业形象 读取仓库内容，生成项目 Logo 与中英文封面， 并输出精确尺寸的 Social Preview 和宣传图。</desc>
+  <desc id="description">让每个项目呈现更完整的专业形象 读取仓库内容，生成完整视觉形象 Logo · 中英文封面 · Social · 宣传图</desc>
 
-  <rect width="2048" height="1024" fill="#ffffff"/>
+  <rect width="2000" height="400" fill="#ffffff"/>
 
   <g
     fill="none"
     stroke="#2855d9"
-    stroke-width="2"
+    stroke-width="1.5"
     stroke-linecap="round"
-    opacity="0.12"
+    opacity="0.1"
   >
-    <g>
-      <path d="M-90 72 C54 8 216 18 318 104 C410 182 408 296 548 354"/>
-      <path d="M-98 108 C48 44 202 52 292 128 C376 198 376 310 516 374"/>
-      <path d="M-104 144 C40 82 184 86 266 154 C342 218 344 324 484 394"/>
-      <path d="M-110 180 C34 120 168 120 240 180 C310 238 312 340 452 414"/>
-      <path d="M-116 216 C26 158 150 154 214 204 C278 258 280 354 420 434"/>
-      <path d="M-122 252 C20 196 134 188 188 230 C246 278 248 370 388 454"/>
-      <path d="M-128 288 C12 236 116 224 162 254 C214 298 216 384 356 474"/>
-    </g>
-    <g transform="translate(2048 1024) scale(-1 -1)">
-      <path d="M-90 72 C54 8 216 18 318 104 C410 182 408 296 548 354"/>
-      <path d="M-98 108 C48 44 202 52 292 128 C376 198 376 310 516 374"/>
-      <path d="M-104 144 C40 82 184 86 266 154 C342 218 344 324 484 394"/>
-      <path d="M-110 180 C34 120 168 120 240 180 C310 238 312 340 452 414"/>
-      <path d="M-116 216 C26 158 150 154 214 204 C278 258 280 354 420 434"/>
-      <path d="M-122 252 C20 196 134 188 188 230 C246 278 248 370 388 454"/>
-      <path d="M-128 288 C12 236 116 224 162 254 C214 298 216 384 356 474"/>
-    </g>
+    <path d="M-70 48 C80 0 230 18 336 92 C430 158 516 172 640 128"/>
+    <path d="M-76 78 C70 34 214 48 316 116 C410 178 494 194 620 154"/>
+    <path d="M-82 108 C60 68 198 78 296 140 C388 198 474 216 600 180"/>
+    <path d="M2070 352 C1920 400 1770 382 1664 308 C1570 242 1484 228 1360 272"/>
+    <path d="M2076 322 C1930 366 1786 352 1684 284 C1590 222 1506 206 1380 246"/>
+    <path d="M2082 292 C1940 332 1802 322 1704 260 C1612 202 1526 184 1400 220"/>
   </g>
 
-  <g fill="none" stroke="#2855d9" stroke-width="1.5" opacity="0.08">
-    <path d="M1470 78 C1604 38 1750 48 1840 112 C1920 170 1960 254 2070 280"/>
-    <path d="M1512 112 C1628 78 1750 86 1828 142 C1898 192 1938 266 2058 302"/>
-    <path d="M1576 876 C1692 932 1818 936 1902 882 C1976 836 2018 770 2080 756"/>
-    <path d="M-30 742 C72 760 110 834 190 880 C278 930 394 924 508 876"/>
+  <g fill="none" stroke="#2855d9" stroke-width="1" opacity="0.07">
+    <path d="M1510 34 C1630 10 1758 20 1850 66 C1926 104 1974 144 2030 150"/>
+    <path d="M-30 310 C76 320 136 356 214 376 C302 398 390 388 480 352"/>
   </g>
 
-  <g id="cover-logo" data-safe-logo="true" direction="ltr" unicode-bidi="isolate" transform="translate(-177.3165 -84.6243) scale(1.50164527)"><g xmlns="http://www.w3.org/2000/svg" id="logo-mark" transform="translate(290.603 187.72) scale(0.155391)"><path d="M176 64 H92 C76 64 64 76 64 92 V176 H108 V108 H176 Z" fill="#202124" />
+  <line
+    x1="1200"
+    y1="72"
+    x2="1200"
+    y2="328"
+    stroke="#d9dfef"
+    stroke-width="2"
+  />
+
+  <g id="cover-logo" data-safe-logo="true" direction="ltr" unicode-bidi="isolate" transform="translate(-117.4701 -83.7531) scale(0.79012346)"><g xmlns="http://www.w3.org/2000/svg" id="logo-mark" transform="translate(290.603 187.72) scale(0.155391)"><path d="M176 64 H92 C76 64 64 76 64 92 V176 H108 V108 H176 Z" fill="#202124" />
   <path d="M336 64 H420 C436 64 448 76 448 92 V176 H404 V108 H336 Z" fill="#2855d9" />
   <path d="M176 448 H92 C76 448 64 436 64 420 V336 H108 V404 H176 Z" fill="#2855d9" />
   <path d="M336 448 H420 C436 448 448 436 448 420 V336 H404 V404 H336 Z" fill="#202124" />
@@ -59,41 +54,51 @@
     <text xmlns="http://www.w3.org/2000/svg" id="logo-wordmark" x="396.218" y="258" fill="#202124" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="81" font-weight="700" letter-spacing="0">Generate Project Visuals</text>
   </g>
 
-  <g text-anchor="middle" letter-spacing="0">
-    <rect x="988" y="370" width="72" height="5" rx="2.5" fill="#2855d9"/>
-
+  <g letter-spacing="0">
     <text
       id="headline"
       data-safe-text="true"
-      x="1024"
-      y="500"
+      x="120"
+      y="286"
+      text-anchor="start"
       fill="#2855d9"
       font-family="'Songti SC', 'Noto Serif CJK SC', SimSun, serif"
-      font-size="111"
+      font-size="65"
       font-style="normal"
       font-weight="400"
     >让每个项目呈现更完整的专业形象</text>
 
+    <rect
+      x="1280"
+      y="124"
+      width="64"
+      height="4"
+      rx="2"
+      fill="#2855d9"
+    />
+
     <text
       id="description-line-1"
       data-safe-text="true"
-      x="1024"
-      y="620"
+      x="1280"
+      y="188"
+      text-anchor="start"
       fill="#5f6368"
       font-family="'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-      font-size="52"
+      font-size="30"
       font-weight="400"
-    >读取仓库内容，生成项目 Logo 与中英文封面，</text>
+    >读取仓库内容，生成完整视觉形象</text>
 
     <text
       id="description-line-2"
       data-safe-text="true"
-      x="1024"
-      y="682"
+      x="1280"
+      y="232"
+      text-anchor="start"
       fill="#5f6368"
       font-family="'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-      font-size="52"
+      font-size="30"
       font-weight="400"
-    >并输出精确尺寸的 Social Preview 和宣传图。</text>
+    >Logo · 中英文封面 · Social · 宣传图</text>
   </g>
 </svg>

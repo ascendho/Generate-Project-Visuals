@@ -121,7 +121,11 @@ copy:
       "language": "en",
       "cover": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A concrete supporting statement,", "completed naturally on line two."]
+        "description_lines": ["A short concrete statement,", "completed on line two."]
+      },
+      "social_preview": {
+        "headline": "A concise editorial statement of the project's value.",
+        "description_lines": ["A longer supporting statement for the wider layout,", "completed naturally on line two."]
       },
       "promo": {
         "headline": "A concise statement for sharing the project.",
@@ -134,7 +138,11 @@ copy:
       "language": "zh-CN",
       "cover": {
         "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行具体说明项目能力，", "第二行自然完成同一句说明。"]
+        "description_lines": ["第一行简要说明项目能力，", "第二行自然完成同一句说明。"]
+      },
+      "social_preview": {
+        "headline": "一句简洁的中文项目价值陈述",
+        "description_lines": ["第一行完整说明项目定位与核心能力，", "第二行自然完成同一句说明。"]
       },
       "promo": {
         "headline": "一句适合分享的中文项目价值陈述",
@@ -151,6 +159,11 @@ copy:
 `source_files` is provenance: list only repository-relative files that were
 actually read and used. It does not make the renderer load those files. Exclude
 secrets, caches, generated output, and unrelated files.
+
+Cover is a compact `5:1` README banner rendered at `4000x800`. Keep its two
+supporting lines short for the right column. Optional `social_preview` copy
+uses the same shape and falls back to `cover`; use it when the unchanged
+`1280x640` Social Preview needs longer wording.
 
 ## Render and validate
 
@@ -169,7 +182,9 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
 The default locale produces `<slug>-cover.svg/png`,
 `<slug>-social-preview.png`, and `<slug>-promo.svg/png`. Additional locales use
 `-<locale>` suffixes. Use the `rasterize` command after manually editing an SVG
-to refresh its PNG without rewriting the SVG.
+to refresh its PNG without rewriting the SVG. Rasterizing a Cover updates only
+its Cover PNG; Social Preview is rendered separately by the full `render`
+command.
 
 ## Develop a Logo
 

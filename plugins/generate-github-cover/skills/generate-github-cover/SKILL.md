@@ -39,8 +39,10 @@ that it lives under the target repository.
    existing/default locales and append it. Do not infer extra output locales
    merely because translated documentation exists.
    Write a concise, editorial headline that communicates the project's
-   positioning, then use the two supporting lines to name its concrete purpose,
-   workflow, or outputs. For Simplified Chinese, omit a terminal `。` or `.`
+   positioning, then use two short supporting lines that remain readable in
+   the Cover's narrow right column. Use optional `social_preview` copy when the
+   `1280x640` Social Preview needs longer or different wording; otherwise it
+   falls back to `cover`. For Simplified Chinese, omit a terminal `。` or `.`
    from image headlines unless the user explicitly requests sentence-style
    punctuation; use normal punctuation in supporting copy.
 5. Normalize the repository URL to HTTPS. Ask rather than inventing it when no
@@ -65,7 +67,8 @@ that it lives under the target repository.
 
 Use `render_cover.py rasterize` after manually editing a Cover, localized
 Cover, or Promo SVG. It must regenerate only the corresponding PNG output and
-must not rewrite the SVG.
+must not rewrite the SVG. Rasterizing a Cover must not rewrite its separately
+rendered Social Preview.
 
 By default, generate assets only. Do not edit README files, upload GitHub
 settings, commit, or push unless the user explicitly requests it.
@@ -119,14 +122,18 @@ Cover generation produces a complete set for every configured locale:
 - each additional locale as `<slug>-cover-<locale>.svg/png`,
   `<slug>-social-preview-<locale>.png`, and `<slug>-promo-<locale>.svg/png`.
 
+The README Cover is a compact `5:1` banner rendered at `4000x800`. The Social
+Preview remains a separately laid out `1280x640` image, and Promo remains
+`3840x2160`.
+
 Without an explicit language request, the default locale is English and the
 additional `zh` locale produces the complete Simplified Chinese set with
 `-zh` filename suffixes.
 
 Use upright serif headlines for CJK, Arabic, Hebrew, Indic, and other scripts
 without reliable italic forms. Keep editorial italics for Latin, Cyrillic, and
-Greek scripts. Mirror the Promo link block for RTL languages while keeping the
-repository URL itself LTR.
+Greek scripts. Mirror the Cover columns and Promo link block for RTL languages
+while keeping the repository URL itself LTR.
 
 Approved Logo generation produces exactly:
 

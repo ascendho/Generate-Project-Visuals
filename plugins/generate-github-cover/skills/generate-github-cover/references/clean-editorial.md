@@ -19,7 +19,14 @@ Use this reference when writing the Cover specification or reviewing output.
       "cover": {
         "headline": "A concise editorial statement of the project's value.",
         "description_lines": [
-          "A supporting sentence split at a natural phrase boundary,",
+          "A short statement of the project's concrete purpose,",
+          "completed naturally on the second compact line."
+        ]
+      },
+      "social_preview": {
+        "headline": "A concise editorial statement of the project's value.",
+        "description_lines": [
+          "A longer supporting sentence split at a natural phrase boundary,",
           "with the second line completing the same sentence."
         ]
       },
@@ -34,7 +41,11 @@ Use this reference when writing the Cover specification or reviewing output.
       "language": "zh-CN",
       "cover": {
         "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行简要说明项目的定位与核心能力，", "第二行完成同一句说明。"]
+        "description_lines": ["第一行简要说明项目能力，", "第二行自然完成同一句说明。"]
+      },
+      "social_preview": {
+        "headline": "一句简洁的中文项目价值陈述",
+        "description_lines": ["第一行完整说明项目的定位与核心能力，", "第二行完成同一句说明。"]
       },
       "promo": {
         "headline": "一句适合分享的中文项目价值陈述",
@@ -61,9 +72,10 @@ Rules:
 - Keep all translatable copy in `locales`; `default_locale` must name one entry.
 - Each locale requires a BCP 47 `language`, complete Cover copy, and complete
   Promo copy. Keep one concise headline and exactly two supporting lines.
+  Optional `social_preview` copy uses the same shape and falls back to `cover`.
 - Make the headline an editorial positioning statement rather than a feature
-  list. Use the two supporting lines to identify the project's concrete
-  purpose, workflow, or outputs so a first-time viewer knows what it does.
+  list. Keep Cover supporting lines short enough for its narrow right column.
+  Use a `social_preview` override when the wider `2:1` layout needs longer copy.
 - Omit terminal `。` and `.` from Simplified Chinese image headlines by
   default. Keep normal punctuation in supporting copy and honor explicit user
   requests for a different headline style.
@@ -81,14 +93,18 @@ Rules:
 
 ## Visual System
 
-- Cover: `2048x1024` SVG, rendered at `4096x2048` and `1280x640`.
+- Cover: `2000x400` SVG, rendered at `4000x800` with identity and headline on
+  the primary side and two short supporting lines on the secondary side.
+- Social Preview: separate `2048x1024` layout rendered at `1280x640`.
 - Promo: `1920x1080` SVG, rendered at `3840x2160`.
 - White background, blue `#2855d9` accent, charcoal `#202124` primary text.
 - Modern sans-serif project identity; serif editorial headline.
 - Use true or well-supported italics only for Latin, Cyrillic, and Greek.
-  Render CJK and other scripts upright; mirror link layout for RTL languages.
+  Render CJK and other scripts upright; mirror Cover columns and link layout
+  for RTL languages.
 - Restrained contour linework around the perimeter, clear of text and QR.
-- Cover safe area: x=`128..1920`, y=`128..896`.
+- Cover safe area: x=`96..1904`, y=`48..352`.
+- Social Preview safe area: x=`128..1920`, y=`128..896`.
 - Promo safe area: x=`120..1800`, y=`100..980`.
 
 This is one stable style. Update it in place; do not add version suffixes.

@@ -102,7 +102,11 @@ tools/package_skill.py           可复现 Skill 打包工具
       "language": "en",
       "cover": {
         "headline": "A concise editorial statement of the project's value.",
-        "description_lines": ["A concrete supporting statement,", "completed naturally on line two."]
+        "description_lines": ["A short concrete statement,", "completed on line two."]
+      },
+      "social_preview": {
+        "headline": "A concise editorial statement of the project's value.",
+        "description_lines": ["A longer supporting statement for the wider layout,", "completed naturally on line two."]
       },
       "promo": {
         "headline": "A concise statement for sharing the project.",
@@ -115,7 +119,11 @@ tools/package_skill.py           可复现 Skill 打包工具
       "language": "zh-CN",
       "cover": {
         "headline": "一句简洁的中文项目价值陈述",
-        "description_lines": ["第一行具体说明项目能力，", "第二行自然完成同一句说明。"]
+        "description_lines": ["第一行简要说明项目能力，", "第二行自然完成同一句说明。"]
+      },
+      "social_preview": {
+        "headline": "一句简洁的中文项目价值陈述",
+        "description_lines": ["第一行完整说明项目定位与核心能力，", "第二行自然完成同一句说明。"]
       },
       "promo": {
         "headline": "一句适合分享的中文项目价值陈述",
@@ -131,6 +139,8 @@ tools/package_skill.py           可复现 Skill 打包工具
 
 `source_files` 是来源记录，只填写已经读取并实际用于定位或文案的仓库相对路径；它不会让渲染器自动读取文件。不要加入秘密、缓存、生成物或无关文件。
 
+Cover 是用于 README 的紧凑 `5:1` 横幅，输出尺寸为 `4000x800`；右栏的两行说明应保持简短。可选的 `social_preview` 与 `cover` 结构相同，缺省时回退到 `cover`；当保持 `1280x640` Social Preview 的较长文案时使用该字段。
+
 ## 渲染与校验
 
 在本仓库开发时运行：
@@ -145,7 +155,7 @@ python "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<repo-slug>-cover.json --output-dir assets
 ```
 
-默认语言生成 `<slug>-cover.svg/png`、`<slug>-social-preview.png` 和 `<slug>-promo.svg/png`；其它语言使用 `-<locale>` 后缀。手动修改 SVG 后使用 `rasterize` 命令，可以只更新 PNG 而不覆盖 SVG。
+默认语言生成 `<slug>-cover.svg/png`、`<slug>-social-preview.png` 和 `<slug>-promo.svg/png`；其它语言使用 `-<locale>` 后缀。手动修改 SVG 后使用 `rasterize` 命令，可以只更新 PNG 而不覆盖 SVG。对 Cover 执行 `rasterize` 只更新对应 Cover PNG；Social Preview 由完整的 `render` 命令独立生成。
 
 ## 设计 Logo
 
