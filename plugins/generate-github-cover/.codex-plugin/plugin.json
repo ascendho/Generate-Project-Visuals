@@ -1,6 +1,6 @@
 {
   "name": "generate-github-cover",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn repository context into polished project branding and shareable artwork.",
   "author": {
     "name": "ascendho",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Generate Project Visuals",
     "shortDescription": "Create logos, bilingual covers, and social artwork.",
-    "longDescription": "Analyze a repository and produce editable logos, English and Chinese covers, exact-size social previews, and promotional artwork.",
+    "longDescription": "Analyze a repository and produce PNG-only logos, English and Chinese covers, exact-size social previews, and promotional artwork.",
     "developerName": "ascendho",
     "category": "Productivity",
     "capabilities": [

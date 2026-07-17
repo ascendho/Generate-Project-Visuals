@@ -1,6 +1,6 @@
 interface:
   display_name: "Generate GitHub Cover"
-  short_description: "Create project logos and bilingual visual asset sets"
-  default_prompt: "Use $generate-github-cover to analyze this repository and generate its Logo Mark, Logo Lockup, and complete English and Simplified Chinese Cover, Social Preview, and Promo asset sets."
+  short_description: "Create PNG logos and bilingual visual asset sets"
+  default_prompt: "Use $generate-github-cover to analyze this repository and generate PNG-only Logo Mark, Logo Lockup, and complete English and Simplified Chinese Cover, Social Preview, and Promo asset sets."
 policy:
   allow_implicit_invocation: true

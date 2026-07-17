@@ -13,11 +13,11 @@
   <title id="title">__ACCESSIBLE_TITLE__</title>
   <desc id="description">__ACCESSIBLE_DESCRIPTION__</desc>
 
-  <rect width="2000" height="400" fill="#ffffff"/>
+  <rect width="2000" height="400" fill="__COLOR_BACKGROUND__"/>
 
   <g
     fill="none"
-    stroke="#2855d9"
+    stroke="__COLOR_PRIMARY__"
     stroke-width="1.5"
     stroke-linecap="round"
     opacity="0.1"
@@ -30,7 +30,7 @@
     <path d="M2082 292 C1940 332 1802 322 1704 260 C1612 202 1526 184 1400 220"/>
   </g>
 
-  <g fill="none" stroke="#2855d9" stroke-width="1" opacity="0.07">
+  <g fill="none" stroke="__COLOR_PRIMARY__" stroke-width="1" opacity="0.07">
     <path d="M1510 34 C1630 10 1758 20 1850 66 C1926 104 1974 144 2030 150"/>
     <path d="M-30 310 C76 320 136 356 214 376 C302 398 390 388 480 352"/>
   </g>
@@ -40,7 +40,7 @@
     y1="72"
     x2="__DIVIDER_X__"
     y2="328"
-    stroke="#d9dfef"
+    stroke="__COLOR_BORDER__"
     stroke-width="2"
   />
 
@@ -51,9 +51,9 @@
       id="headline"
       data-safe-text="true"
       x="__PRIMARY_X__"
-      y="286"
+      y="238"
       text-anchor="__TEXT_ANCHOR__"
-      fill="#2855d9"
+      fill="__COLOR_PRIMARY__"
       font-family="__HEADLINE_FONT_FAMILY__"
       font-size="__HEADLINE_SIZE__"
       font-style="__HEADLINE_FONT_STYLE__"
@@ -66,7 +66,7 @@
       width="64"
       height="4"
       rx="2"
-      fill="#2855d9"
+      fill="__COLOR_PRIMARY__"
     />
 
     <text
@@ -75,7 +75,7 @@
       x="__SECONDARY_X__"
       y="188"
       text-anchor="__TEXT_ANCHOR__"
-      fill="#5f6368"
+      fill="__COLOR_MUTED__"
       font-family="__DESCRIPTION_FONT_FAMILY__"
       font-size="__DESCRIPTION_SIZE__"
       font-weight="400"
@@ -87,7 +87,7 @@
       x="__SECONDARY_X__"
       y="232"
       text-anchor="__TEXT_ANCHOR__"
-      fill="#5f6368"
+      fill="__COLOR_MUTED__"
       font-family="__DESCRIPTION_FONT_FAMILY__"
       font-size="__DESCRIPTION_SIZE__"
       font-weight="400"

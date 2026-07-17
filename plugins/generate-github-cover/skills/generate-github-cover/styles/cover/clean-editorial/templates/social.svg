@@ -13,11 +13,11 @@
   <title id="title">__ACCESSIBLE_TITLE__</title>
   <desc id="description">__ACCESSIBLE_DESCRIPTION__</desc>
 
-  <rect width="2048" height="1024" fill="#ffffff"/>
+  <rect width="2048" height="1024" fill="__COLOR_BACKGROUND__"/>
 
   <g
     fill="none"
-    stroke="#2855d9"
+    stroke="__COLOR_PRIMARY__"
     stroke-width="2"
     stroke-linecap="round"
     opacity="0.12"
@@ -42,7 +42,7 @@
     </g>
   </g>
 
-  <g fill="none" stroke="#2855d9" stroke-width="1.5" opacity="0.08">
+  <g fill="none" stroke="__COLOR_PRIMARY__" stroke-width="1.5" opacity="0.08">
     <path d="M1470 78 C1604 38 1750 48 1840 112 C1920 170 1960 254 2070 280"/>
     <path d="M1512 112 C1628 78 1750 86 1828 142 C1898 192 1938 266 2058 302"/>
     <path d="M1576 876 C1692 932 1818 936 1902 882 C1976 836 2018 770 2080 756"/>
@@ -52,14 +52,14 @@
   __PROJECT_IDENTITY__
 
   <g text-anchor="middle" letter-spacing="0">
-    <rect x="988" y="370" width="72" height="5" rx="2.5" fill="#2855d9"/>
+    <rect x="988" y="370" width="72" height="5" rx="2.5" fill="__COLOR_PRIMARY__"/>
 
     <text
       id="headline"
       data-safe-text="true"
       x="1024"
       y="500"
-      fill="#2855d9"
+      fill="__COLOR_PRIMARY__"
       font-family="__HEADLINE_FONT_FAMILY__"
       font-size="__HEADLINE_SIZE__"
       font-style="__HEADLINE_FONT_STYLE__"
@@ -71,7 +71,7 @@
       data-safe-text="true"
       x="1024"
       y="620"
-      fill="#5f6368"
+      fill="__COLOR_MUTED__"
       font-family="__DESCRIPTION_FONT_FAMILY__"
       font-size="__DESCRIPTION_SIZE__"
       font-weight="400"
@@ -82,7 +82,7 @@
       data-safe-text="true"
       x="1024"
       y="682"
-      fill="#5f6368"
+      fill="__COLOR_MUTED__"
       font-family="__DESCRIPTION_FONT_FAMILY__"
       font-size="__DESCRIPTION_SIZE__"
       font-weight="400"

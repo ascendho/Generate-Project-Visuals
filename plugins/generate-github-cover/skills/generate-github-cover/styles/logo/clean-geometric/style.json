@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "logo",
+  "id": "clean-geometric",
+  "description": "Simple two-color geometric marks paired with a restrained horizontal wordmark.",
+  "palette": {
+    "primary": "#2855d9",
+    "secondary": "#202124"
+  },
+  "mark": {
+    "viewbox": [512, 512],
+    "png_size": [1024, 1024],
+    "maximum_geometry_elements": 16
+  },
+  "lockup": {
+    "viewbox": [1600, 400],
+    "png_size": [3200, 800],
+    "wordmark_width": 1200,
+    "mark_to_wordmark_size": 0.73666667,
+    "gap": 36,
+    "font_family": "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    "font_weight": 700
+  },
+  "contact_sheet": {
+    "png_size": [2400, 1400]
+  }
+}

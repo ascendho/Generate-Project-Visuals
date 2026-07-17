@@ -43,8 +43,10 @@ jobs:
             assets/generate-project-visuals-cover.json \
             --output-dir /tmp/generate-project-visuals-release
           python plugins/generate-github-cover/skills/generate-github-cover/scripts/render_logo.py validate \
+            --style clean-geometric \
             --slug generate-project-visuals \
             --output-dir assets
+          test -z "$(find assets -maxdepth 1 -name '*.svg' -print -quit)"
 
       - name: Build release archive
         run: python tools/package_skill.py "$GITHUB_REF_NAME"

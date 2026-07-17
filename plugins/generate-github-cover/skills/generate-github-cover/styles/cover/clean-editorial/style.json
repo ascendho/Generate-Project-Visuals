@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "kind": "cover",
+  "id": "clean-editorial",
+  "description": "Airy editorial layouts with restrained contour lines and a blue serif headline.",
+  "palette": {
+    "background": "#ffffff",
+    "primary": "#2855d9",
+    "text": "#202124",
+    "muted": "#5f6368",
+    "subtle": "#72767d",
+    "border": "#d9dfef"
+  },
+  "artboards": {
+    "cover": {
+      "template": "templates/cover.svg",
+      "viewbox": [2000, 400],
+      "png_size": [4000, 800],
+      "safe_box": [96, 48, 1904, 352],
+      "identity": {"center_y": 96, "height": 64, "maximum_width": 1000},
+      "fit": {
+        "defaults": {"project_name": 64, "headline": 68, "description": 30},
+        "minimums": {"project_name": 40, "headline": 44, "description": 20},
+        "maximum_widths": {"project_name": 1000, "headline": 1000, "description": 620}
+      }
+    },
+    "social": {
+      "template": "templates/social.svg",
+      "viewbox": [2048, 1024],
+      "png_size": [1280, 640],
+      "safe_box": [128, 128, 1920, 896],
+      "identity": {"center_y": 257, "height": 180, "maximum_width": 1500},
+      "fit": {
+        "defaults": {"project_name": 180, "headline": 140, "description": 52},
+        "minimums": {"project_name": 88, "headline": 70, "description": 34},
+        "maximum_widths": {"project_name": 1500, "headline": 1680, "description": 1550}
+      }
+    },
+    "promo": {
+      "template": "templates/promo.svg",
+      "viewbox": [1920, 1080],
+      "png_size": [3840, 2160],
+      "safe_box": [120, 100, 1800, 980],
+      "identity": {"center_y": 206, "height": 170, "maximum_width": 1400},
+      "fit": {
+        "defaults": {
+          "promo_project_name": 170,
+          "promo_headline": 76,
+          "promo_description": 38,
+          "promo_notice": 22,
+          "promo_url": 28
+        },
+        "minimums": {
+          "promo_project_name": 90,
+          "promo_headline": 48,
+          "promo_description": 28,
+          "promo_notice": 17,
+          "promo_url": 18
+        },
+        "maximum_widths": {
+          "promo_project_name": 1400,
+          "promo_headline": 1560,
+          "promo_description": 1400,
+          "promo_notice": 1400,
+          "promo_url": 760
+        }
+      }
+    }
+  }
+}

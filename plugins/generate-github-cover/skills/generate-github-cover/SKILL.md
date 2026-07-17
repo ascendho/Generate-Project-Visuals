@@ -1,154 +1,120 @@
 ---
 name: generate-github-cover
-description: Analyze a GitHub repository and generate maintainable project Logo Mark and Logo Lockup assets plus complete localized sets of README covers, 1280x640 social previews, and 16:9 promotional cards in a clean editorial style. Generate English and Simplified Chinese artwork by default, or honor an explicitly requested locale set. Use for requests to create, refresh, localize, or standardize project logos, repository banners, Open Graph images, social cards, project covers, or shareable project artwork from repository evidence without asking an image model to typeset the artwork.
+description: Analyze a GitHub repository and generate PNG-only project Logo Mark and Logo Lockup assets plus complete localized sets of README Covers, 1280x640 Social Previews, and 16:9 Promo images. Generate English and Simplified Chinese artwork by default, or honor an explicitly requested locale set. Use for requests to create, refresh, localize, or standardize project logos, repository banners, Open Graph images, social cards, project Covers, or shareable project artwork from repository evidence without asking an image model to typeset the artwork.
 ---
 
 # Generate GitHub Cover
 
-Create repository artwork from evidence in the repository. Use the current
-model for analysis and copywriting, then use the bundled helpers for
-deterministic SVG layout and PNG rendering. Do not call an image model in this
-version of the skill.
+Create repository artwork from evidence in the repository. Use the bundled
+renderers for deterministic temporary SVG layout and final PNG output. Do not
+call an image model in the default workflow.
 
-Resolve `<skill-dir>` to the directory containing this `SKILL.md` before
-running bundled commands. The Skill may be installed through a Plugin, copied
-to a user Skill directory, or checked out in a source repository; never assume
-that it lives under the target repository.
+Resolve `<skill-dir>` to the directory containing this file. The Skill may be
+installed through a Plugin, copied into a user Skill directory, or checked out
+in a source repository; never assume it is inside the target repository.
 
-## Cover Workflow
+## Analyze the Repository
 
 1. Find the repository root, inspect `git status`, and preserve unrelated work.
-2. Read every applicable `AGENTS.md`, then inspect primary and
-   alternate-language READMEs, package metadata, entry points, relevant
-   documentation and configuration, existing visuals, and the Git remote.
-3. Write an evidence-based brief: exact project name, audience, workflow,
-   differentiator, visual direction, and inspected paths. Track only
-   repository-relative files actually used to support the positioning or copy.
-   Exclude secrets, caches, generated outputs, and unrelated files. Do not
-   invent claims.
-4. Read [references/clean-editorial.md](references/clean-editorial.md), then
-   write one `assets/<repo-slug>-cover.json`. Put all user-editable copy under
-   `locales` and set `source_files` to the evidence list from step 3. Treat
-   `source_files` as provenance, not as an automatic file loader; include
-   `AGENTS.md` or other documentation only when it informed the result. When
-   the user does not specify target languages, create complete `en` and `zh`
-   entries, use `language: en` and `language: zh-CN`, and set `default_locale`
-   to `en`. When the user explicitly specifies a language set, generate
-   exactly that set; use the requested default or the first language listed.
-   When the user says to add, retain, or include another language, preserve the
-   existing/default locales and append it. Do not infer extra output locales
-   merely because translated documentation exists.
-   Write a concise, editorial headline that communicates the project's
-   positioning, then use two short supporting lines that remain readable in
-   the Cover's narrow right column. Use optional `social_preview` copy when the
-   `1280x640` Social Preview needs longer or different wording; otherwise it
-   falls back to `cover`. For Simplified Chinese, omit a terminal `。` or `.`
-   from image headlines unless the user explicitly requests sentence-style
-   punctuation; use normal punctuation in supporting copy.
-5. Normalize the repository URL to HTTPS. Ask rather than inventing it when no
-   valid GitHub remote is available.
-6. Render into a temporary directory first, inspect every format at full size
-   and thumbnail size, then revise weak or overflowing copy.
+2. Read every applicable `AGENTS.md`, primary and translated READMEs, package
+   metadata, entry points, relevant documentation and configuration, existing
+   visuals, and the Git remote.
+3. Record the exact project name, audience, workflow, differentiator, visual
+   direction, and repository-relative files actually used. Exclude secrets,
+   caches, generated outputs, unrelated files, and unsupported claims.
+4. Normalize the project URL to an HTTPS GitHub repository URL. Ask rather than
+   inventing it when no valid remote is available.
 
-   ```sh
-   python <skill-dir>/scripts/render_cover.py render \
-     assets/<repo-slug>-cover.json \
-     --output-dir /tmp/<repo-slug>-cover-preview
-   ```
+## Select Styles
 
-7. Render approved assets into `assets/` and validate them. Use `--force` only
-   when the user explicitly requested an update.
+Use `clean-editorial` for `cover_style` and `clean-geometric` for `logo_style`
+unless the user requests another installed style. Read the selected references:
 
-   ```sh
-   python <skill-dir>/scripts/render_cover.py validate \
-     assets/<repo-slug>-cover.json \
-     --output-dir assets
-   ```
+- `styles/cover/<cover-style>/reference.md`
+- `styles/logo/<logo-style>/reference.md`
 
-Use `render_cover.py rasterize` after manually editing a Cover, localized
-Cover, or Promo SVG. It must regenerate only the corresponding PNG output and
-must not rewrite the SVG. Rasterizing a Cover must not rewrite its separately
-rendered Social Preview.
+Read [references/style-authoring.md](references/style-authoring.md) only when
+adding or changing a reusable style package.
 
-By default, generate assets only. Do not edit README files, upload GitHub
-settings, commit, or push unless the user explicitly requests it.
+## Create the Logo
 
-## Logo Workflow
-
-1. Reuse the repository analysis to identify three distinct project-specific
-   visual metaphors. Keep the style geometric and restrained, but do not force
-   one fixed symbol language across unrelated projects.
-2. Author exactly three temporary `512x512` Mark-only SVG concepts. Use basic
-   geometry, transparent backgrounds, and the clean-editorial blue/charcoal
-   palette. Do not include text, fonts, gradients, filters, raster images,
-   scripts, or external references.
-3. Generate and inspect a contact sheet:
+1. Derive three distinct, project-specific visual metaphors from the repository.
+2. Author exactly three temporary `512x512` Mark SVG inputs named
+   `concept-a.svg`, `concept-b.svg`, and `concept-c.svg` under `/tmp`. Follow the
+   selected Logo style reference; never place concepts in the repository.
+3. Generate and inspect the PNG contact sheet:
 
    ```sh
    python <skill-dir>/scripts/render_logo.py preview \
+     --style clean-geometric \
      --project-name "Example Project" \
      --slug example-project \
      --input-dir /tmp/example-project-logo-concepts \
-     --output-dir /tmp/example-project-logo-concepts
+     --output-dir /tmp/example-project-logo-preview
    ```
 
-4. Present all three concepts and stop. Do not choose a winner automatically.
-5. After explicit approval, refine the selected concept and generate the two
-   canonical forms in SVG and transparent PNG:
+4. Present all three concepts and stop. Do not select one without user approval.
+5. After approval, render and validate the selected concept:
 
    ```sh
    python <skill-dir>/scripts/render_logo.py render \
+     --style clean-geometric \
      --project-name "Example Project" \
      --slug example-project \
      --mark /tmp/example-project-logo-concepts/concept-a.svg \
      --output-dir assets
 
    python <skill-dir>/scripts/render_logo.py validate \
-     --slug example-project \
-     --output-dir assets
+     --style clean-geometric --slug example-project --output-dir assets
    ```
 
-6. Do not adopt a Logo in Cover, Promo, or README assets until the user
-   confirms it. After confirmation, set `logo_lockup` in the Cover spec to the
-   approved Lockup SVG and rerender when the user requests updated artwork.
+Do not adopt a Logo in other artwork until the user confirms it. Public Logo
+outputs are only transparent `<slug>-logo-mark.png` at `1024x1024` and
+`<slug>-logo-lockup.png` at `3200x800`.
 
-## Outputs
+## Create Localized Artwork
 
-Cover generation produces a complete set for every configured locale:
+Write `assets/<slug>-cover.json` with `schema_version: 4`, explicit
+`cover_style` and `logo_style`, the approved Lockup PNG path, and all copy under
+`locales`. Use `source_files` only as provenance for files actually read.
 
-- `<slug>-cover.json` as the single editable copy and localization source;
-- the default locale as `<slug>-cover.svg/png`, `<slug>-social-preview.png`,
-  and `<slug>-promo.svg/png`;
-- each additional locale as `<slug>-cover-<locale>.svg/png`,
-  `<slug>-social-preview-<locale>.png`, and `<slug>-promo-<locale>.svg/png`.
+When languages are not specified, create complete `en` and `zh` entries with
+`language: en`, `language: zh-CN`, and `default_locale: en`. When the user names
+a language set, generate exactly that set. Preserve existing locales only when
+the user asks to add, retain, or include them; translated documentation alone
+does not authorize extra locales.
 
-The README Cover is a compact `5:1` banner rendered at `4000x800`. The Social
-Preview remains a separately laid out `1280x640` image, and Promo remains
-`3840x2160`.
+Each locale needs one concise positioning headline and exactly two supporting
+lines for Cover and Promo. Optional `social_preview` copy falls back to Cover.
+Keep Simplified Chinese headlines free of terminal punctuation unless requested.
 
-Without an explicit language request, the default locale is English and the
-additional `zh` locale produces the complete Simplified Chinese set with
-`-zh` filename suffixes.
+Render to `/tmp` first, inspect every PNG at full and thumbnail sizes, then
+render approved assets into `assets/` and validate:
 
-Use upright serif headlines for CJK, Arabic, Hebrew, Indic, and other scripts
-without reliable italic forms. Keep editorial italics for Latin, Cyrillic, and
-Greek scripts. Mirror the Cover columns and Promo link block for RTL languages
-while keeping the repository URL itself LTR.
+```sh
+python <skill-dir>/scripts/render_cover.py render \
+  assets/<slug>-cover.json --output-dir /tmp/<slug>-preview
+python <skill-dir>/scripts/render_cover.py render \
+  assets/<slug>-cover.json --output-dir assets --force
+python <skill-dir>/scripts/render_cover.py validate \
+  assets/<slug>-cover.json --output-dir assets
+```
 
-Approved Logo generation produces exactly:
+Use `--force` only for an explicitly requested update. The default locale uses
+unsuffixed filenames; other locales use `-<locale>`. Each locale produces only:
 
-- `<slug>-logo-mark.svg` and transparent `1024x1024` PNG;
-- `<slug>-logo-lockup.svg` and transparent `3200x800` PNG.
+- `<slug>-cover[-<locale>].png` at `4000x800`;
+- `<slug>-social-preview[-<locale>].png` at `1280x640`;
+- `<slug>-promo[-<locale>].png` at `3840x2160`.
 
-The Mark is the symbol-only asset for avatars and small UI. The Lockup combines
-the same Mark with the exact project name for horizontal identity use. Do not
-generate public monochrome or version-suffixed variants.
+By default, generate assets only. Do not edit README files, GitHub settings,
+commits, tags, or remotes unless the user explicitly requests those actions.
 
 ## Failure Handling
 
-- Report missing Playwright or Chromium instead of switching renderers.
-- Shorten copy that cannot fit above the template's minimum type sizes.
-- Reject incomplete locale entries instead of mixing languages across outputs.
-- Refuse unexpected overwrites.
+- Report missing Playwright or Chromium instead of changing renderers.
+- Reject schema v3, non-PNG Lockups, incomplete locales, unsafe paths,
+  unexpected overwrites, invalid PNG transparency, and unsupported styles.
+- Shorten copy that cannot fit at the style's minimum type sizes.
 - Ask for positioning when repository evidence is insufficient.
 - Revise Logo concepts that resemble known brands or fail at small sizes.

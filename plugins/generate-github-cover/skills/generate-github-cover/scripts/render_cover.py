@@ -8,17 +8,17 @@ import math
 import re
 import shutil
 import struct
-import sys
 import tempfile
 import xml.etree.ElementTree as ET
+import zlib
 from pathlib import Path
 from urllib.parse import urlparse
 
-from render_logo import LogoError, load_logo_lockup
+from style_registry import StyleError, load_style, style_file
 
 
-SCHEMA_VERSION = 3
-STYLE_NAME = "clean-editorial"
+SCHEMA_VERSION = 4
+ACTIVE_COVER_STYLE = "clean-editorial"
 COVER_VIEWBOX = (2000, 400)
 COVER_PNG_SIZE = (4000, 800)
 COVER_SAFE_BOX = (96, 48, 1904, 352)
@@ -28,6 +28,23 @@ SOCIAL_SAFE_BOX = (128, 128, 1920, 896)
 PROMO_VIEWBOX = (1920, 1080)
 PROMO_PNG_SIZE = (3840, 2160)
 PROMO_SAFE_BOX = (120, 100, 1800, 980)
+COVER_TEMPLATE_PATH = Path()
+SOCIAL_TEMPLATE_PATH = Path()
+PROMO_TEMPLATE_PATH = Path()
+COVER_PALETTE = {
+    "background": "#ffffff",
+    "primary": "#2855d9",
+    "text": "#202124",
+    "muted": "#5f6368",
+    "subtle": "#72767d",
+    "border": "#d9dfef",
+}
+COVER_FIT: dict[str, dict[str, int]] = {}
+SOCIAL_FIT: dict[str, dict[str, int]] = {}
+PROMO_FIT: dict[str, dict[str, int]] = {}
+COVER_IDENTITY = {"center_y": 96, "height": 64, "maximum_width": 1000}
+SOCIAL_IDENTITY = {"center_y": 257, "height": 180, "maximum_width": 1500}
+PROMO_IDENTITY = {"center_y": 206, "height": 170, "maximum_width": 1400}
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 LANGUAGE_PATTERN = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$")
@@ -56,14 +73,129 @@ UPRIGHT_LANGUAGES = {
     "th",
     "ti",
 }
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
-COVER_TEMPLATE_PATH = TEMPLATE_DIR / "clean-editorial-cover.svg"
-SOCIAL_TEMPLATE_PATH = TEMPLATE_DIR / "clean-editorial-social.svg"
-PROMO_TEMPLATE_PATH = TEMPLATE_DIR / "clean-editorial-promo.svg"
-
-
 class CoverError(RuntimeError):
     pass
+
+
+def _style_pair(value: object, field: str) -> tuple[int, int]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or any(not isinstance(item, int) or item <= 0 for item in value)
+    ):
+        raise CoverError(f"{field} must contain two positive integers")
+    return int(value[0]), int(value[1])
+
+
+def _style_box(value: object, field: str) -> tuple[int, int, int, int]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 4
+        or any(not isinstance(item, int) for item in value)
+    ):
+        raise CoverError(f"{field} must contain four integers")
+    left, top, right, bottom = (int(item) for item in value)
+    if left < 0 or top < 0 or right <= left or bottom <= top:
+        raise CoverError(f"{field} must define a positive safe box")
+    return left, top, right, bottom
+
+
+def _fit_config(value: object, field: str) -> dict[str, dict[str, int]]:
+    if not isinstance(value, dict):
+        raise CoverError(f"{field} must be a JSON object")
+    result: dict[str, dict[str, int]] = {}
+    for key in ("defaults", "minimums", "maximum_widths"):
+        raw = value.get(key)
+        if not isinstance(raw, dict) or not raw:
+            raise CoverError(f"{field}.{key} must be a non-empty JSON object")
+        normalized: dict[str, int] = {}
+        for name, item in raw.items():
+            if not isinstance(name, str) or not isinstance(item, int) or item <= 0:
+                raise CoverError(f"{field}.{key} values must be positive integers")
+            normalized[name] = item
+        result[key] = normalized
+    if not (result["defaults"].keys() == result["minimums"].keys() == result["maximum_widths"].keys()):
+        raise CoverError(f"{field} keys must match across defaults, minimums, and maximum_widths")
+    return result
+
+
+def _identity_config(value: object, field: str) -> dict[str, int]:
+    if not isinstance(value, dict):
+        raise CoverError(f"{field} must be a JSON object")
+    result = {}
+    for key in ("center_y", "height", "maximum_width"):
+        item = value.get(key)
+        if not isinstance(item, int) or item <= 0:
+            raise CoverError(f"{field}.{key} must be a positive integer")
+        result[key] = item
+    return result
+
+
+def configure_cover_style(style_id: str) -> dict[str, object]:
+    global ACTIVE_COVER_STYLE
+    global COVER_VIEWBOX, COVER_PNG_SIZE, COVER_SAFE_BOX, COVER_TEMPLATE_PATH
+    global SOCIAL_VIEWBOX, SOCIAL_PNG_SIZE, SOCIAL_SAFE_BOX, SOCIAL_TEMPLATE_PATH
+    global PROMO_VIEWBOX, PROMO_PNG_SIZE, PROMO_SAFE_BOX, PROMO_TEMPLATE_PATH
+    global COVER_PALETTE, COVER_FIT, SOCIAL_FIT, PROMO_FIT
+    global COVER_IDENTITY, SOCIAL_IDENTITY, PROMO_IDENTITY
+
+    try:
+        style = load_style("cover", style_id)
+    except StyleError as exc:
+        raise CoverError(str(exc)) from exc
+    palette = style.get("palette")
+    artboards = style.get("artboards")
+    if not isinstance(palette, dict) or not isinstance(artboards, dict):
+        raise CoverError(f"cover style {style_id!r} has incomplete configuration")
+    required_colors = ("background", "primary", "text", "muted", "subtle", "border")
+    normalized_palette: dict[str, str] = {}
+    for key in required_colors:
+        color = palette.get(key)
+        if not isinstance(color, str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+            raise CoverError(f"cover style palette.{key} must be a hex color")
+        normalized_palette[key] = color.lower()
+
+    configured: dict[str, dict[str, object]] = {}
+    for name in ("cover", "social", "promo"):
+        raw = artboards.get(name)
+        if not isinstance(raw, dict):
+            raise CoverError(f"cover style artboards.{name} must be a JSON object")
+        try:
+            template_path = style_file(
+                style, raw.get("template"), f"artboards.{name}.template"
+            )
+        except StyleError as exc:
+            raise CoverError(str(exc)) from exc
+        configured[name] = {
+            "template": template_path,
+            "viewbox": _style_pair(raw.get("viewbox"), f"artboards.{name}.viewbox"),
+            "png_size": _style_pair(raw.get("png_size"), f"artboards.{name}.png_size"),
+            "safe_box": _style_box(raw.get("safe_box"), f"artboards.{name}.safe_box"),
+            "identity": _identity_config(raw.get("identity"), f"artboards.{name}.identity"),
+            "fit": _fit_config(raw.get("fit"), f"artboards.{name}.fit"),
+        }
+
+    ACTIVE_COVER_STYLE = style_id
+    COVER_PALETTE = normalized_palette
+    COVER_TEMPLATE_PATH = configured["cover"]["template"]  # type: ignore[assignment]
+    COVER_VIEWBOX = configured["cover"]["viewbox"]  # type: ignore[assignment]
+    COVER_PNG_SIZE = configured["cover"]["png_size"]  # type: ignore[assignment]
+    COVER_SAFE_BOX = configured["cover"]["safe_box"]  # type: ignore[assignment]
+    COVER_IDENTITY = configured["cover"]["identity"]  # type: ignore[assignment]
+    COVER_FIT = configured["cover"]["fit"]  # type: ignore[assignment]
+    SOCIAL_TEMPLATE_PATH = configured["social"]["template"]  # type: ignore[assignment]
+    SOCIAL_VIEWBOX = configured["social"]["viewbox"]  # type: ignore[assignment]
+    SOCIAL_PNG_SIZE = configured["social"]["png_size"]  # type: ignore[assignment]
+    SOCIAL_SAFE_BOX = configured["social"]["safe_box"]  # type: ignore[assignment]
+    SOCIAL_IDENTITY = configured["social"]["identity"]  # type: ignore[assignment]
+    SOCIAL_FIT = configured["social"]["fit"]  # type: ignore[assignment]
+    PROMO_TEMPLATE_PATH = configured["promo"]["template"]  # type: ignore[assignment]
+    PROMO_VIEWBOX = configured["promo"]["viewbox"]  # type: ignore[assignment]
+    PROMO_PNG_SIZE = configured["promo"]["png_size"]  # type: ignore[assignment]
+    PROMO_SAFE_BOX = configured["promo"]["safe_box"]  # type: ignore[assignment]
+    PROMO_IDENTITY = configured["promo"]["identity"]  # type: ignore[assignment]
+    PROMO_FIT = configured["promo"]["fit"]  # type: ignore[assignment]
+    return style
 
 
 def _single_line(value: object, field: str, *, max_length: int) -> str:
@@ -118,9 +250,122 @@ def _project_url(value: object) -> str:
     return f"https://github.com/{owner}/{repository}"
 
 
-def _logo_lockup(path: Path, value: object) -> tuple[str | None, str, float | None]:
+def _paeth(left: int, up: int, upper_left: int) -> int:
+    estimate = left + up - upper_left
+    left_distance = abs(estimate - left)
+    up_distance = abs(estimate - up)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= up_distance and left_distance <= upper_left_distance:
+        return left
+    if up_distance <= upper_left_distance:
+        return up
+    return upper_left
+
+
+def _png_alpha_bounds(path: Path) -> tuple[tuple[int, int], tuple[int, int, int, int]]:
+    try:
+        source = path.read_bytes()
+    except FileNotFoundError as exc:
+        raise CoverError(f"missing PNG: {path}") from exc
+    if not source.startswith(PNG_SIGNATURE):
+        raise CoverError(f"invalid PNG: {path}")
+
+    cursor = len(PNG_SIGNATURE)
+    width = height = bit_depth = color_type = interlace = None
+    compressed = bytearray()
+    while cursor + 12 <= len(source):
+        length = struct.unpack(">I", source[cursor : cursor + 4])[0]
+        chunk_type = source[cursor + 4 : cursor + 8]
+        chunk_start = cursor + 8
+        chunk_end = chunk_start + length
+        crc_end = chunk_end + 4
+        if crc_end > len(source):
+            raise CoverError(f"truncated PNG chunk in {path}")
+        chunk = source[chunk_start:chunk_end]
+        expected_crc = struct.unpack(">I", source[chunk_end:crc_end])[0]
+        actual_crc = zlib.crc32(chunk_type)
+        actual_crc = zlib.crc32(chunk, actual_crc) & 0xFFFFFFFF
+        if actual_crc != expected_crc:
+            raise CoverError(f"invalid PNG checksum in {path}")
+        if chunk_type == b"IHDR":
+            if length != 13:
+                raise CoverError(f"invalid PNG header in {path}")
+            width, height, bit_depth, color_type, compression, filtering, interlace = struct.unpack(
+                ">IIBBBBB", chunk
+            )
+            if compression != 0 or filtering != 0:
+                raise CoverError(f"unsupported PNG compression or filter method in {path}")
+        elif chunk_type == b"IDAT":
+            compressed.extend(chunk)
+        elif chunk_type == b"IEND":
+            break
+        cursor = crc_end
+
+    if width is None or height is None or bit_depth != 8 or color_type not in {4, 6}:
+        raise CoverError(f"logo_lockup must be an 8-bit PNG with an alpha channel: {path}")
+    if interlace != 0:
+        raise CoverError(f"interlaced logo_lockup PNG files are not supported: {path}")
+    bytes_per_pixel = 2 if color_type == 4 else 4
+    stride = width * bytes_per_pixel
+    try:
+        scanlines = zlib.decompress(bytes(compressed))
+    except zlib.error as exc:
+        raise CoverError(f"invalid compressed PNG data in {path}") from exc
+    expected_length = height * (stride + 1)
+    if len(scanlines) != expected_length:
+        raise CoverError(f"unexpected PNG scanline length in {path}")
+
+    previous = bytearray(stride)
+    minimum_x = width
+    minimum_y = height
+    maximum_x = maximum_y = -1
+    offset = 0
+    alpha_index = 1 if color_type == 4 else 3
+    for y in range(height):
+        filter_type = scanlines[offset]
+        offset += 1
+        row = bytearray(scanlines[offset : offset + stride])
+        offset += stride
+        for index in range(stride):
+            left = row[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            up = previous[index]
+            upper_left = previous[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            if filter_type == 1:
+                row[index] = (row[index] + left) & 0xFF
+            elif filter_type == 2:
+                row[index] = (row[index] + up) & 0xFF
+            elif filter_type == 3:
+                row[index] = (row[index] + ((left + up) // 2)) & 0xFF
+            elif filter_type == 4:
+                row[index] = (row[index] + _paeth(left, up, upper_left)) & 0xFF
+            elif filter_type != 0:
+                raise CoverError(f"unsupported PNG row filter in {path}")
+        for x in range(width):
+            if row[x * bytes_per_pixel + alpha_index] == 0:
+                continue
+            minimum_x = min(minimum_x, x)
+            minimum_y = min(minimum_y, y)
+            maximum_x = max(maximum_x, x)
+            maximum_y = max(maximum_y, y)
+        previous = row
+
+    if maximum_x < minimum_x or maximum_y < minimum_y:
+        raise CoverError(f"logo_lockup PNG is fully transparent: {path}")
+    return (width, height), (
+        minimum_x,
+        minimum_y,
+        maximum_x + 1,
+        maximum_y + 1,
+    )
+
+
+def _logo_lockup(
+    path: Path,
+    value: object,
+    logo_style: dict[str, object],
+) -> tuple[str | None, str, tuple[int, int] | None, tuple[int, int, int, int] | None]:
     if value is None:
-        return None, "", None
+        return None, "", None, None
     normalized = _single_line(value, "logo_lockup", max_length=240)
     relative_path = Path(normalized)
     if (
@@ -128,10 +373,10 @@ def _logo_lockup(path: Path, value: object) -> tuple[str | None, str, float | No
         or ".." in relative_path.parts
         or "://" in normalized
         or re.match(r"^[A-Za-z]:[\\/]", normalized)
-        or relative_path.suffix.lower() != ".svg"
+        or relative_path.suffix.lower() != ".png"
     ):
         raise CoverError(
-            "logo_lockup must be a relative SVG path without parent traversal"
+            "logo_lockup must be a relative PNG path without parent traversal"
         )
     asset_path = (path.parent / relative_path).resolve()
     try:
@@ -140,11 +385,17 @@ def _logo_lockup(path: Path, value: object) -> tuple[str | None, str, float | No
         raise CoverError(
             "logo_lockup must resolve inside the specification directory"
         ) from exc
-    try:
-        geometry, font_size = load_logo_lockup(asset_path)
-    except LogoError as exc:
-        raise CoverError(f"invalid logo_lockup {normalized!r}: {exc}") from exc
-    return normalized, geometry, font_size
+    lockup = logo_style.get("lockup")
+    if not isinstance(lockup, dict):
+        raise CoverError("logo style is missing its lockup configuration")
+    expected_size = _style_pair(lockup.get("png_size"), "logo_style.lockup.png_size")
+    size, content_box = _png_alpha_bounds(asset_path)
+    if size != expected_size:
+        raise CoverError(
+            f"logo_lockup must be {expected_size[0]}x{expected_size[1]}, "
+            f"got {size[0]}x{size[1]}"
+        )
+    return normalized, asset_path.as_uri(), size, content_box
 
 
 def _cover_copy(value: object, field: str) -> dict[str, object]:
@@ -238,14 +489,20 @@ def load_spec(path: Path) -> dict[str, object]:
     if not isinstance(raw, dict):
         raise CoverError("spec root must be a JSON object")
     if raw.get("schema_version") != SCHEMA_VERSION:
-        if raw.get("schema_version") == 2:
+        if raw.get("schema_version") == 3:
             raise CoverError(
-                "schema_version 2 is no longer supported; migrate language, cover_variants, "
-                "and promo into schema_version 3 default_locale and locales entries"
+                "schema_version 3 is no longer supported; use schema_version 4, replace "
+                "style with cover_style and logo_style, and reference a PNG logo_lockup"
             )
         raise CoverError(f"schema_version must be {SCHEMA_VERSION}")
-    if raw.get("style") != STYLE_NAME:
-        raise CoverError(f"style must be {STYLE_NAME!r}")
+
+    cover_style = _single_line(raw.get("cover_style"), "cover_style", max_length=64)
+    logo_style_id = _single_line(raw.get("logo_style"), "logo_style", max_length=64)
+    configure_cover_style(cover_style)
+    try:
+        logo_style = load_style("logo", logo_style_id)
+    except StyleError as exc:
+        raise CoverError(str(exc)) from exc
 
     slug = _single_line(raw.get("repository_slug"), "repository_slug", max_length=64)
     if not SLUG_PATTERN.fullmatch(slug):
@@ -275,21 +532,24 @@ def load_spec(path: Path) -> dict[str, object]:
             raise CoverError(f"source_files[{index}] must be a repository-relative path")
         normalized_sources.append(normalized)
 
-    logo_lockup, logo_markup, logo_font_size = _logo_lockup(
+    logo_lockup, logo_data_uri, logo_size, logo_content_box = _logo_lockup(
         path,
         raw.get("logo_lockup"),
+        logo_style,
     )
     locales = _locales(raw.get("locales"), default_locale)
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "style": STYLE_NAME,
+        "cover_style": cover_style,
+        "logo_style": logo_style_id,
         "repository_slug": slug,
         "project_name": _single_line(raw.get("project_name"), "project_name", max_length=80),
         "project_url": _project_url(raw.get("project_url")),
         "logo_lockup": logo_lockup,
-        "_logo_markup": logo_markup,
-        "_logo_font_size": logo_font_size,
+        "_logo_data_uri": logo_data_uri,
+        "_logo_size": logo_size,
+        "_logo_content_box": logo_content_box,
         "default_locale": default_locale,
         "locales": locales,
         "source_files": normalized_sources,
@@ -302,17 +562,13 @@ def output_paths(
     locale_suffixes: tuple[str, ...] = (),
 ) -> dict[str, Path]:
     paths = {
-        "cover_svg": output_dir / f"{slug}-cover.svg",
         "cover_png": output_dir / f"{slug}-cover.png",
         "social_png": output_dir / f"{slug}-social-preview.png",
-        "promo_svg": output_dir / f"{slug}-promo.svg",
         "promo_png": output_dir / f"{slug}-promo.png",
     }
     for suffix in locale_suffixes:
-        paths[f"cover_{suffix}_svg"] = output_dir / f"{slug}-cover-{suffix}.svg"
         paths[f"cover_{suffix}_png"] = output_dir / f"{slug}-cover-{suffix}.png"
         paths[f"social_{suffix}_png"] = output_dir / f"{slug}-social-preview-{suffix}.png"
-        paths[f"promo_{suffix}_svg"] = output_dir / f"{slug}-promo-{suffix}.svg"
         paths[f"promo_{suffix}_png"] = output_dir / f"{slug}-promo-{suffix}.png"
     return paths
 
@@ -354,17 +610,13 @@ def _ordered_locale_keys(spec: dict[str, object]) -> tuple[str, ...]:
 def _locale_path_keys(locale_key: str, default_locale: str) -> dict[str, str]:
     if locale_key == default_locale:
         return {
-            "cover_svg": "cover_svg",
             "cover_png": "cover_png",
             "social_png": "social_png",
-            "promo_svg": "promo_svg",
             "promo_png": "promo_png",
         }
     return {
-        "cover_svg": f"cover_{locale_key}_svg",
         "cover_png": f"cover_{locale_key}_png",
         "social_png": f"social_{locale_key}_png",
-        "promo_svg": f"promo_{locale_key}_svg",
         "promo_png": f"promo_{locale_key}_png",
     }
 
@@ -378,6 +630,17 @@ def _replace_placeholders(template: str, replacements: dict[str, str]) -> str:
     return template
 
 
+def _palette_replacements() -> dict[str, str]:
+    return {
+        "__COLOR_BACKGROUND__": COVER_PALETTE["background"],
+        "__COLOR_PRIMARY__": COVER_PALETTE["primary"],
+        "__COLOR_TEXT__": COVER_PALETTE["text"],
+        "__COLOR_MUTED__": COVER_PALETTE["muted"],
+        "__COLOR_SUBTLE__": COVER_PALETTE["subtle"],
+        "__COLOR_BORDER__": COVER_PALETTE["border"],
+    }
+
+
 def _project_identity(
     spec: dict[str, object],
     sizes: dict[str, int | float],
@@ -389,18 +652,24 @@ def _project_identity(
     name_x: int,
     name_anchor: str = "middle",
 ) -> str:
-    markup = str(spec.get("_logo_markup") or "")
-    if markup:
+    data_uri = str(spec.get("_logo_data_uri") or "")
+    logo_size = spec.get("_logo_size")
+    content_box = spec.get("_logo_content_box")
+    if data_uri and isinstance(logo_size, tuple) and isinstance(content_box, tuple):
+        width, height = logo_size
+        left, top, right, bottom = content_box
         return (
-            f'<g id="{prefix}-logo" data-safe-logo="true" '
-            'direction="ltr" unicode-bidi="isolate" '
+            f'<g id="{prefix}-logo" direction="ltr" unicode-bidi="isolate" '
             f'transform="translate({sizes[f"{prefix}_logo_x"]} '
             f'{sizes[f"{prefix}_logo_y"]}) scale({sizes[f"{prefix}_logo_scale"]})">'
-            f"{markup}</g>"
+            f'<image width="{width}" height="{height}" href="{data_uri}"/>'
+            f'<rect id="{prefix}-logo-bounds" data-safe-logo="true" '
+            f'x="{left}" y="{top}" width="{right - left}" height="{bottom - top}" '
+            'fill="#000000" opacity="0"/></g>'
         )
     return (
         f'<text id="{name_id}" data-safe-text="true" x="{name_x}" y="{name_y}" '
-        f'text-anchor="{name_anchor}" fill="#202124" direction="ltr" '
+        f'text-anchor="{name_anchor}" fill="{COVER_PALETTE["text"]}" direction="ltr" '
         'unicode-bidi="isolate" '
         'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica Neue, '
         'Helvetica, Arial, sans-serif" '
@@ -488,6 +757,7 @@ def build_cover_svg(spec: dict[str, object], sizes: dict[str, int | float]) -> s
         name_anchor=text_anchor,
     )
     replacements = {
+        **_palette_replacements(),
         "__LANGUAGE__": html.escape(typography["language"], quote=True),
         "__TEXT_DIRECTION__": typography["direction"],
         "__ACCESSIBLE_TITLE__": html.escape(str(spec["project_name"]), quote=False),
@@ -530,6 +800,7 @@ def build_social_svg(spec: dict[str, object], sizes: dict[str, int | float]) -> 
     )
     typography = _language_typography(spec["language"])
     replacements = {
+        **_palette_replacements(),
         "__LANGUAGE__": html.escape(typography["language"], quote=True),
         "__TEXT_DIRECTION__": typography["direction"],
         "__ACCESSIBLE_TITLE__": html.escape(str(spec["project_name"]), quote=False),
@@ -607,6 +878,7 @@ def build_promo_svg(spec: dict[str, object], sizes: dict[str, int | float]) -> s
         name_x=PROMO_VIEWBOX[0] // 2,
     )
     replacements = {
+        **_palette_replacements(),
         "__LANGUAGE__": html.escape(typography["language"], quote=True),
         "__TEXT_DIRECTION__": typography["direction"],
         "__ACCESSIBLE_TITLE__": html.escape(str(spec["project_name"]), quote=False),
@@ -702,6 +974,10 @@ def measure_text(
     try:
         page.goto(svg_path.resolve().as_uri(), wait_until="load")
         page.evaluate("() => document.fonts ? document.fonts.ready : Promise.resolve()")
+        page.evaluate(
+            "() => Promise.all(Array.from(document.images).map((image) => "
+            "image.decode ? image.decode() : Promise.resolve()))"
+        )
         return page.evaluate(
             """() => Array.from(document.querySelectorAll(
                 '[data-safe-text="true"], [data-safe-logo="true"]'
@@ -714,41 +990,30 @@ def measure_text(
         page.close()
 
 
-def _measured_box(
-    boxes: list[dict[str, float | str]],
-    element_id: str,
-) -> dict[str, float | str]:
-    matches = [box for box in boxes if box["id"] == element_id]
-    if len(matches) != 1:
-        raise CoverError(f"expected one measurable element with id {element_id!r}")
-    return matches[0]
-
-
 def _position_logo(
+    spec: dict[str, object],
     sizes: dict[str, int | float],
-    boxes: list[dict[str, float | str]],
     *,
     prefix: str,
     canvas_width: int,
     center_y: float,
-    desired_scale: float,
+    desired_height: float,
     maximum_width: float,
     start_x: float | None = None,
     end_x: float | None = None,
 ) -> None:
-    logo = _measured_box(boxes, f"{prefix}-logo")
-    current_scale = float(sizes[f"{prefix}_logo_scale"])
-    if current_scale <= 0:
-        raise CoverError("logo scale must be positive")
-
-    native_x = (float(logo["x"]) - float(sizes[f"{prefix}_logo_x"])) / current_scale
-    native_y = (float(logo["y"]) - float(sizes[f"{prefix}_logo_y"])) / current_scale
-    native_width = float(logo["width"]) / current_scale
-    native_height = float(logo["height"]) / current_scale
+    content_box = spec.get("_logo_content_box")
+    if not isinstance(content_box, tuple) or len(content_box) != 4:
+        raise CoverError("Logo content bounds are unavailable")
+    left, top, right, bottom = (float(item) for item in content_box)
+    native_x = left
+    native_y = top
+    native_width = right - left
+    native_height = bottom - top
     if native_width <= 0 or native_height <= 0:
         raise CoverError("Logo has no measurable visible geometry")
 
-    scale = min(desired_scale, maximum_width / native_width)
+    scale = min(desired_height / native_height, maximum_width / native_width)
     logo_width = native_width * scale
     logo_height = native_height * scale
     if start_x is not None and end_x is not None:
@@ -773,21 +1038,15 @@ def fit_cover_svg(
     svg_path: Path,
     spec: dict[str, object],
 ) -> list[dict[str, float | str]]:
-    has_logo = bool(spec.get("_logo_markup"))
+    has_logo = bool(spec.get("_logo_data_uri"))
     sizes: dict[str, int | float] = {
-        "project_name": 64,
-        "headline": 68,
-        "description": 30,
+        **COVER_FIT["defaults"],
         "cover_logo_x": 0,
         "cover_logo_y": 0,
         "cover_logo_scale": 1,
     }
-    minimums = {"project_name": 40, "headline": 44, "description": 20}
-    maximum_widths = {
-        "project_name": 1000,
-        "headline": 1000,
-        "description": 620,
-    }
+    minimums = COVER_FIT["minimums"]
+    maximum_widths = COVER_FIT["maximum_widths"]
 
     for _ in range(5):
         write_svg(svg_path, spec, sizes, kind="cover")
@@ -824,17 +1083,14 @@ def fit_cover_svg(
             changed = True
         if not changed:
             if has_logo:
-                logo_font_size = float(spec.get("_logo_font_size") or 0)
-                if logo_font_size <= 0:
-                    raise CoverError("Logo wordmark font size must be positive")
                 _position_logo(
+                    spec,
                     sizes,
-                    boxes,
                     prefix="cover",
                     canvas_width=COVER_VIEWBOX[0],
-                    center_y=96,
-                    desired_scale=64 / logo_font_size,
-                    maximum_width=1000,
+                    center_y=COVER_IDENTITY["center_y"],
+                    desired_height=COVER_IDENTITY["height"],
+                    maximum_width=COVER_IDENTITY["maximum_width"],
                     end_x=1880
                     if _language_typography(spec["language"])["direction"] == "rtl"
                     else None,
@@ -855,21 +1111,15 @@ def fit_social_svg(
     svg_path: Path,
     spec: dict[str, object],
 ) -> list[dict[str, float | str]]:
-    has_logo = bool(spec.get("_logo_markup"))
+    has_logo = bool(spec.get("_logo_data_uri"))
     sizes: dict[str, int | float] = {
-        "project_name": 180,
-        "headline": 140,
-        "description": 52,
+        **SOCIAL_FIT["defaults"],
         "social_logo_x": 0,
         "social_logo_y": 0,
         "social_logo_scale": 1,
     }
-    minimums = {"project_name": 88, "headline": 70, "description": 34}
-    maximum_widths = {
-        "project_name": 1500,
-        "headline": 1680,
-        "description": 1550,
-    }
+    minimums = SOCIAL_FIT["minimums"]
+    maximum_widths = SOCIAL_FIT["maximum_widths"]
 
     for _ in range(5):
         write_svg(svg_path, spec, sizes, kind="social")
@@ -906,17 +1156,14 @@ def fit_social_svg(
             changed = True
         if not changed:
             if has_logo:
-                logo_font_size = float(spec.get("_logo_font_size") or 0)
-                if logo_font_size <= 0:
-                    raise CoverError("Logo wordmark font size must be positive")
                 _position_logo(
+                    spec,
                     sizes,
-                    boxes,
                     prefix="social",
                     canvas_width=SOCIAL_VIEWBOX[0],
-                    center_y=257,
-                    desired_scale=180 / logo_font_size,
-                    maximum_width=1500,
+                    center_y=SOCIAL_IDENTITY["center_y"],
+                    desired_height=SOCIAL_IDENTITY["height"],
+                    maximum_width=SOCIAL_IDENTITY["maximum_width"],
                 )
                 write_svg(svg_path, spec, sizes, kind="social")
                 boxes = measure_text(browser, svg_path, SOCIAL_VIEWBOX)
@@ -931,31 +1178,15 @@ def fit_promo_svg(
     svg_path: Path,
     spec: dict[str, object],
 ) -> list[dict[str, float | str]]:
-    has_logo = bool(spec.get("_logo_markup"))
+    has_logo = bool(spec.get("_logo_data_uri"))
     sizes: dict[str, int | float] = {
-        "promo_project_name": 170,
-        "promo_headline": 76,
-        "promo_description": 38,
-        "promo_notice": 22,
-        "promo_url": 28,
+        **PROMO_FIT["defaults"],
         "promo_logo_x": 0,
         "promo_logo_y": 0,
         "promo_logo_scale": 1,
     }
-    minimums = {
-        "promo_project_name": 90,
-        "promo_headline": 48,
-        "promo_description": 28,
-        "promo_notice": 17,
-        "promo_url": 18,
-    }
-    maximum_widths = {
-        "promo_project_name": 1400,
-        "promo_headline": 1560,
-        "promo_description": 1400,
-        "promo_notice": 1400,
-        "promo_url": 760,
-    }
+    minimums = PROMO_FIT["minimums"]
+    maximum_widths = PROMO_FIT["maximum_widths"]
     prefixes = {
         "promo_project_name": ("promo-project-name",),
         "promo_headline": ("promo-headline",),
@@ -992,17 +1223,14 @@ def fit_promo_svg(
             changed = True
         if not changed:
             if has_logo:
-                logo_font_size = float(spec.get("_logo_font_size") or 0)
-                if logo_font_size <= 0:
-                    raise CoverError("Logo wordmark font size must be positive")
                 _position_logo(
+                    spec,
                     sizes,
-                    boxes,
                     prefix="promo",
                     canvas_width=PROMO_VIEWBOX[0],
-                    center_y=206,
-                    desired_scale=170 / logo_font_size,
-                    maximum_width=1400,
+                    center_y=PROMO_IDENTITY["center_y"],
+                    desired_height=PROMO_IDENTITY["height"],
+                    maximum_width=PROMO_IDENTITY["maximum_width"],
                 )
                 write_svg(svg_path, spec, sizes, kind="promo")
                 boxes = measure_text(browser, svg_path, PROMO_VIEWBOX)
@@ -1034,6 +1262,10 @@ def screenshot(browser, svg_path: Path, output_path: Path, width: int, height: i
     try:
         page.goto(svg_path.resolve().as_uri(), wait_until="load")
         page.evaluate("() => document.fonts ? document.fonts.ready : Promise.resolve()")
+        page.evaluate(
+            "() => Promise.all(Array.from(document.images).map((image) => "
+            "image.decode ? image.decode() : Promise.resolve()))"
+        )
         page.screenshot(path=str(output_path))
     finally:
         page.close()
@@ -1053,7 +1285,7 @@ def validate_svg_source(
     path: Path,
     *,
     allowed_href: str | None = None,
-    allow_github_href: bool = False,
+    allowed_image_href: str | None = None,
     require_qr: bool = False,
 ) -> None:
     try:
@@ -1069,8 +1301,13 @@ def validate_svg_source(
     qr_found = False
     for element in tree.getroot().iter():
         tag = element.tag.rsplit("}", 1)[-1].lower()
-        if tag in {"image", "script", "foreignobject"}:
+        if tag in {"script", "foreignobject"}:
             raise CoverError(f"{tag} elements are not allowed in {path}")
+        if tag == "image" and (
+            allowed_image_href is None
+            or element.attrib.get("href") != allowed_image_href
+        ):
+            raise CoverError(f"unapproved embedded image in {path}")
         if element.attrib.get("id") == "promo-qr-modules":
             qr_found = True
         for attribute, value in element.attrib.items():
@@ -1079,14 +1316,10 @@ def validate_svg_source(
                 raise CoverError(f"embedded asset references are not allowed in {path}")
             if attribute_name != "href":
                 continue
+            if tag == "image" and allowed_image_href is not None and value == allowed_image_href:
+                continue
             if allowed_href is not None and value == allowed_href:
                 continue
-            if allow_github_href:
-                try:
-                    if _project_url(value) == value:
-                        continue
-                except CoverError:
-                    pass
             raise CoverError(f"unapproved link {value!r} in {path}")
     if require_qr and not qr_found:
         raise CoverError(f"promotional SVG is missing its embedded QR path: {path}")
@@ -1108,16 +1341,6 @@ def validate_png_pair(cover_path: Path, social_path: Path) -> tuple[tuple[int, i
     return cover_size, social_size
 
 
-def validate_cover_png(path: Path) -> tuple[int, int]:
-    size = png_dimensions(path)
-    if size != COVER_PNG_SIZE:
-        raise CoverError(
-            f"cover PNG must be {COVER_PNG_SIZE[0]}x{COVER_PNG_SIZE[1]}, "
-            f"got {size[0]}x{size[1]}"
-        )
-    return size
-
-
 def validate_promo_png(path: Path) -> tuple[int, int]:
     size = png_dimensions(path)
     if size != PROMO_PNG_SIZE:
@@ -1126,6 +1349,50 @@ def validate_promo_png(path: Path) -> tuple[int, int]:
             f"got {size[0]}x{size[1]}"
         )
     return size
+
+
+def _source_paths(
+    source_dir: Path,
+    slug: str,
+    locale_key: str,
+    default_locale: str,
+) -> dict[str, Path]:
+    suffix = "" if locale_key == default_locale else f"-{locale_key}"
+    return {
+        "cover": source_dir / f"{slug}-cover{suffix}.svg",
+        "social": source_dir / f"{slug}-social-preview{suffix}.svg",
+        "promo": source_dir / f"{slug}-promo{suffix}.svg",
+    }
+
+
+def _validate_layouts(spec: dict[str, object], browser, source_dir: Path) -> None:
+    locales = spec.get("locales")
+    assert isinstance(locales, dict)
+    default_locale = str(spec["default_locale"])
+    slug = str(spec["repository_slug"])
+    allowed_image_href = str(spec.get("_logo_data_uri") or "") or None
+    for locale_key in _ordered_locale_keys(spec):
+        locale = locales[locale_key]
+        assert isinstance(locale, dict)
+        localized_spec = _localized_spec(spec, locale)
+        sources = _source_paths(source_dir, slug, locale_key, default_locale)
+        fit_cover_svg(browser, sources["cover"], localized_spec)
+        fit_social_svg(browser, sources["social"], localized_spec)
+        fit_promo_svg(browser, sources["promo"], localized_spec)
+        validate_svg_source(
+            sources["cover"],
+            allowed_image_href=allowed_image_href,
+        )
+        validate_svg_source(
+            sources["social"],
+            allowed_image_href=allowed_image_href,
+        )
+        validate_svg_source(
+            sources["promo"],
+            allowed_href=str(spec["project_url"]),
+            allowed_image_href=allowed_image_href,
+            require_qr=True,
+        )
 
 
 def validate_outputs(spec: dict[str, object], output_dir: Path, browser=None) -> dict[str, object]:
@@ -1137,43 +1404,26 @@ def validate_outputs(spec: dict[str, object], output_dir: Path, browser=None) ->
     localized_outputs: dict[str, dict[str, object]] = {}
     for locale_key in _ordered_locale_keys(spec):
         key_map = _locale_path_keys(locale_key, default_locale)
-        cover_svg = paths[key_map["cover_svg"]]
         cover_png = paths[key_map["cover_png"]]
         social_png = paths[key_map["social_png"]]
-        promo_svg = paths[key_map["promo_svg"]]
         promo_png = paths[key_map["promo_png"]]
-        validate_svg_source(cover_svg)
-        validate_svg_source(
-            promo_svg,
-            allowed_href=str(spec["project_url"]),
-            require_qr=True,
-        )
         cover_size, social_size = validate_png_pair(cover_png, social_png)
         promo_size = validate_promo_png(promo_png)
         localized_outputs[locale_key] = {
             "language": locales[locale_key]["language"],
-            "cover_svg": str(cover_svg),
             "cover_png": str(cover_png),
             "social_png": str(social_png),
-            "promo_svg": str(promo_svg),
             "promo_png": str(promo_png),
             "cover_size": list(cover_size),
             "social_size": list(social_size),
             "promo_size": list(promo_size),
         }
-        if browser is not None:
-            validate_safe_area(
-                measure_text(browser, cover_svg, COVER_VIEWBOX),
-                COVER_SAFE_BOX,
-                f"cover locale {locale_key}",
-            )
-            validate_safe_area(
-                measure_text(browser, promo_svg, PROMO_VIEWBOX),
-                PROMO_SAFE_BOX,
-                f"promotional locale {locale_key}",
-            )
+    if browser is not None:
+        with tempfile.TemporaryDirectory(prefix="cover-layout-validation-") as temp_name:
+            _validate_layouts(spec, browser, Path(temp_name))
     return {
-        "style": spec["style"],
+        "cover_style": spec["cover_style"],
+        "logo_style": spec["logo_style"],
         "default_locale": default_locale,
         "locales": localized_outputs,
     }
@@ -1206,12 +1456,33 @@ def command_render(args: argparse.Namespace) -> int:
                     assert isinstance(locale, dict)
                     localized_spec = _localized_spec(spec, locale)
                     key_map = _locale_path_keys(locale_key, default_locale)
-                    cover_svg = temp_paths[key_map["cover_svg"]]
-                    social_svg = temp_paths[key_map["social_png"]].with_suffix(".svg")
-                    promo_svg = temp_paths[key_map["promo_svg"]]
+                    sources = _source_paths(
+                        temp_dir,
+                        str(spec["repository_slug"]),
+                        locale_key,
+                        default_locale,
+                    )
+                    cover_svg = sources["cover"]
+                    social_svg = sources["social"]
+                    promo_svg = sources["promo"]
                     fit_cover_svg(browser, cover_svg, localized_spec)
                     fit_social_svg(browser, social_svg, localized_spec)
                     fit_promo_svg(browser, promo_svg, localized_spec)
+                    allowed_image_href = str(spec.get("_logo_data_uri") or "") or None
+                    validate_svg_source(
+                        cover_svg,
+                        allowed_image_href=allowed_image_href,
+                    )
+                    validate_svg_source(
+                        social_svg,
+                        allowed_image_href=allowed_image_href,
+                    )
+                    validate_svg_source(
+                        promo_svg,
+                        allowed_href=str(spec["project_url"]),
+                        allowed_image_href=allowed_image_href,
+                        require_qr=True,
+                    )
                     screenshot(
                         browser,
                         cover_svg,
@@ -1230,7 +1501,7 @@ def command_render(args: argparse.Namespace) -> int:
                         temp_paths[key_map["promo_png"]],
                         *PROMO_PNG_SIZE,
                     )
-                validate_outputs(spec, temp_dir, browser=browser)
+                validate_outputs(spec, temp_dir)
             finally:
                 browser.close()
 
@@ -1241,136 +1512,6 @@ def command_render(args: argparse.Namespace) -> int:
             shutil.move(str(temp_path), str(destination))
 
     result = validate_outputs(spec, output_dir)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def command_rasterize(args: argparse.Namespace) -> int:
-    svg_path = Path(args.svg).resolve()
-    if svg_path.name.endswith("-cover.svg"):
-        kind = "cover"
-        suffix = "-cover.svg"
-        locale = None
-        validate_svg_source(svg_path)
-    elif svg_path.name.endswith("-promo.svg"):
-        kind = "promo"
-        suffix = "-promo.svg"
-        locale = None
-        validate_svg_source(svg_path, allow_github_href=True, require_qr=True)
-    else:
-        localized_match = re.fullmatch(
-            r"(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-"
-            r"(?P<asset>cover|promo)-"
-            r"(?P<locale>[a-z0-9]+(?:-[a-z0-9]+)*)\.svg",
-            svg_path.name,
-        )
-        if localized_match is None:
-            raise CoverError(
-                "editable SVG filename must end with '-cover.svg', "
-                "'-cover-<locale>.svg', '-promo.svg', or '-promo-<locale>.svg'"
-            )
-        kind = f"{localized_match.group('asset')}_locale"
-        slug = localized_match.group("slug")
-        locale = localized_match.group("locale")
-        if kind == "cover_locale":
-            validate_svg_source(svg_path)
-        else:
-            validate_svg_source(svg_path, allow_github_href=True, require_qr=True)
-    if not kind.endswith("_locale"):
-        slug = svg_path.name[: -len(suffix)]
-    if not SLUG_PATTERN.fullmatch(slug):
-        raise CoverError("editable SVG filename must start with a valid repository slug")
-
-    output_dir = Path(args.output_dir).resolve()
-    locale_suffixes = (locale,) if locale is not None else ()
-    paths = output_paths(output_dir, slug, locale_suffixes)
-    if kind == "cover":
-        output_keys = ("cover_png",)
-    elif kind == "cover_locale":
-        output_keys = (f"cover_{locale}_png",)
-    elif kind == "promo":
-        output_keys = ("promo_png",)
-    else:
-        output_keys = (f"promo_{locale}_png",)
-    png_paths = {key: paths[key] for key in output_keys}
-    existing = [path for path in png_paths.values() if path.exists()]
-    if existing and not args.force:
-        names = ", ".join(path.name for path in existing)
-        raise CoverError(f"refusing to overwrite existing output(s): {names}; use --force")
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    sync_playwright = _load_playwright()
-    with tempfile.TemporaryDirectory(prefix="github-cover-", dir=output_dir) as temp_name:
-        temp_dir = Path(temp_name)
-        temp_paths = output_paths(temp_dir, slug, locale_suffixes)
-        with sync_playwright() as playwright:
-            browser = launch_browser(playwright)
-            try:
-                if kind in {"cover", "cover_locale"}:
-                    validate_safe_area(
-                        measure_text(browser, svg_path, COVER_VIEWBOX),
-                        COVER_SAFE_BOX,
-                        "cover",
-                    )
-                    if kind == "cover":
-                        screenshot(
-                            browser,
-                            svg_path,
-                            temp_paths["cover_png"],
-                            *COVER_PNG_SIZE,
-                        )
-                        validate_cover_png(temp_paths["cover_png"])
-                    else:
-                        locale_cover_png = temp_paths[f"cover_{locale}_png"]
-                        screenshot(
-                            browser,
-                            svg_path,
-                            locale_cover_png,
-                            *COVER_PNG_SIZE,
-                        )
-                        validate_cover_png(locale_cover_png)
-                else:
-                    validate_safe_area(
-                        measure_text(browser, svg_path, PROMO_VIEWBOX),
-                        PROMO_SAFE_BOX,
-                        "promotional",
-                    )
-                    promo_key = "promo_png" if kind == "promo" else f"promo_{locale}_png"
-                    screenshot(browser, svg_path, temp_paths[promo_key], *PROMO_PNG_SIZE)
-                    validate_promo_png(temp_paths[promo_key])
-            finally:
-                browser.close()
-
-        for key in output_keys:
-            temp_path = temp_paths[key]
-            destination = paths[key]
-            if destination.exists():
-                destination.unlink()
-            shutil.move(str(temp_path), str(destination))
-
-    if kind == "cover":
-        cover_size = validate_cover_png(paths["cover_png"])
-        result = {
-            "svg": str(svg_path),
-            "cover_png": str(paths["cover_png"]),
-            "cover_size": list(cover_size),
-        }
-    elif kind == "cover_locale":
-        locale_cover_png = paths[f"cover_{locale}_png"]
-        cover_size = validate_cover_png(locale_cover_png)
-        result = {
-            "svg": str(svg_path),
-            "cover_png": str(locale_cover_png),
-            "cover_size": list(cover_size),
-        }
-    else:
-        promo_key = "promo_png" if kind == "promo" else f"promo_{locale}_png"
-        promo_size = validate_promo_png(paths[promo_key])
-        result = {
-            "svg": str(svg_path),
-            "promo_png": str(paths[promo_key]),
-            "promo_size": list(promo_size),
-        }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -1391,31 +1532,17 @@ def command_validate(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Render and validate clean editorial GitHub cover and promo assets."
+        description="Render and validate styled project Cover, Social Preview, and Promo PNGs."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    render = subparsers.add_parser("render", help="Render SVG and PNG files from a spec.")
+    render = subparsers.add_parser("render", help="Render PNG files from a specification.")
     render.add_argument("spec", help="Path to the cover specification JSON.")
     render.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
     render.add_argument("--force", action="store_true", help="Replace existing generated files.")
     render.set_defaults(func=command_render)
 
-    rasterize = subparsers.add_parser(
-        "rasterize", help="Render PNG files from a manually edited SVG."
-    )
-    rasterize.add_argument(
-        "svg",
-        help=(
-            "Path to an editable <slug>-cover.svg, <slug>-cover-<locale>.svg, "
-            "<slug>-promo.svg, or <slug>-promo-<locale>.svg file."
-        ),
-    )
-    rasterize.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
-    rasterize.add_argument("--force", action="store_true", help="Replace existing PNG files.")
-    rasterize.set_defaults(func=command_rasterize)
-
-    validate = subparsers.add_parser("validate", help="Validate generated cover files.")
+    validate = subparsers.add_parser("validate", help="Validate generated PNG files and layouts.")
     validate.add_argument("spec", help="Path to the cover specification JSON.")
     validate.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
     validate.set_defaults(func=command_validate)

@@ -26,17 +26,55 @@ REQUIRED_FILES = (
     "SKILL.md",
     "agents/openai.yaml",
     "requirements.txt",
-    "references/clean-editorial.md",
+    "references/style-authoring.md",
     "scripts/render_cover.py",
     "scripts/render_logo.py",
-    "templates/clean-editorial-cover.svg",
-    "templates/clean-editorial-promo.svg",
+    "scripts/style_registry.py",
 )
 EXCLUDED_PARTS = {"__pycache__", ".DS_Store", ".pytest_cache"}
 
 
 class PackageError(RuntimeError):
     pass
+
+
+def validate_styles() -> None:
+    manifests = sorted((SKILL_ROOT / "styles").glob("*/*/style.json"))
+    if not manifests:
+        raise PackageError("Skill must contain at least one discoverable style")
+    discovered: set[tuple[str, str]] = set()
+    for path in manifests:
+        kind = path.parent.parent.name
+        style_id = path.parent.name
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise PackageError(f"cannot read style manifest {path}: {exc}") from exc
+        if not isinstance(manifest, dict):
+            raise PackageError(f"style manifest must be a JSON object: {path}")
+        if manifest.get("schema_version") != 1:
+            raise PackageError(f"style manifest schema_version must be 1: {path}")
+        if manifest.get("kind") != kind or manifest.get("id") != style_id:
+            raise PackageError(f"style manifest kind/id must match its path: {path}")
+        if kind not in {"cover", "logo"}:
+            raise PackageError(f"unsupported style kind {kind!r}: {path}")
+        reference = path.parent / "reference.md"
+        if not reference.is_file():
+            raise PackageError(f"style is missing reference.md: {path.parent}")
+        if kind == "cover":
+            artboards = manifest.get("artboards")
+            if not isinstance(artboards, dict):
+                raise PackageError(f"Cover style is missing artboards: {path}")
+            for name in ("cover", "social", "promo"):
+                artboard = artboards.get(name)
+                template = artboard.get("template") if isinstance(artboard, dict) else None
+                if not isinstance(template, str) or not (path.parent / template).is_file():
+                    raise PackageError(f"Cover style is missing its {name} template: {path}")
+        discovered.add((kind, style_id))
+    if not any(kind == "cover" for kind, _ in discovered):
+        raise PackageError("Skill must contain a Cover style")
+    if not any(kind == "logo" for kind, _ in discovered):
+        raise PackageError("Skill must contain a Logo style")
 
 
 def normalize_version(value: str) -> str:
@@ -62,6 +100,7 @@ def validate_distribution(version: str) -> list[Path]:
     missing = [path for path in REQUIRED_FILES if not (SKILL_ROOT / path).is_file()]
     if missing:
         raise PackageError(f"missing required Skill files: {', '.join(missing)}")
+    validate_styles()
 
     skill_text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
     if not skill_text.startswith("---\n") or "\n---\n" not in skill_text[4:]:

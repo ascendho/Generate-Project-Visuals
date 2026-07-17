@@ -13,6 +13,8 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from style_registry import StyleError, load_style
+
 
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
@@ -27,6 +29,12 @@ LOCKUP_WORDMARK_WIDTH = 1200
 MARK_TO_WORDMARK_SIZE = 0.73666667
 LOCKUP_GAP = 36
 CONTACT_SHEET_SIZE = (2400, 1400)
+MAX_GEOMETRY_ELEMENTS = 16
+WORDMARK_FONT_FAMILY = (
+    "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+)
+WORDMARK_FONT_WEIGHT = 700
+ACTIVE_STYLE_ID = "clean-geometric"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CONCEPT_FILENAMES = ("concept-a.svg", "concept-b.svg", "concept-c.svg")
@@ -77,6 +85,86 @@ FINAL_ALLOWED_ATTRIBUTES = {
 
 class LogoError(RuntimeError):
     pass
+
+
+def _style_pair(value: object, field: str) -> tuple[int, int]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or any(not isinstance(item, int) or item <= 0 for item in value)
+    ):
+        raise LogoError(f"{field} must contain two positive integers")
+    return int(value[0]), int(value[1])
+
+
+def configure_style(style_id: str) -> dict[str, object]:
+    global ACTIVE_STYLE_ID
+    global PRIMARY_COLOR, SECONDARY_COLOR, ALLOWED_COLORS
+    global MARK_VIEWBOX, MARK_PNG_SIZE, LOCKUP_VIEWBOX, LOCKUP_PNG_SIZE
+    global LOCKUP_WORDMARK_WIDTH, MARK_TO_WORDMARK_SIZE, LOCKUP_GAP
+    global CONTACT_SHEET_SIZE, MAX_GEOMETRY_ELEMENTS
+    global WORDMARK_FONT_FAMILY, WORDMARK_FONT_WEIGHT
+
+    try:
+        style = load_style("logo", style_id)
+    except StyleError as exc:
+        raise LogoError(str(exc)) from exc
+    palette = style.get("palette")
+    mark = style.get("mark")
+    lockup = style.get("lockup")
+    contact_sheet = style.get("contact_sheet")
+    if not all(isinstance(item, dict) for item in (palette, mark, lockup, contact_sheet)):
+        raise LogoError(f"logo style {style_id!r} has incomplete configuration")
+    assert isinstance(palette, dict)
+    assert isinstance(mark, dict)
+    assert isinstance(lockup, dict)
+    assert isinstance(contact_sheet, dict)
+
+    primary = palette.get("primary")
+    secondary = palette.get("secondary")
+    if not all(
+        isinstance(color, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", color)
+        for color in (primary, secondary)
+    ):
+        raise LogoError(f"logo style {style_id!r} must define two hex palette colors")
+    PRIMARY_COLOR = str(primary).lower()
+    SECONDARY_COLOR = str(secondary).lower()
+    ALLOWED_COLORS = {"none", PRIMARY_COLOR, SECONDARY_COLOR}
+    MARK_VIEWBOX = _style_pair(mark.get("viewbox"), "mark.viewbox")
+    MARK_PNG_SIZE = _style_pair(mark.get("png_size"), "mark.png_size")
+    LOCKUP_VIEWBOX = _style_pair(lockup.get("viewbox"), "lockup.viewbox")
+    LOCKUP_PNG_SIZE = _style_pair(lockup.get("png_size"), "lockup.png_size")
+    CONTACT_SHEET_SIZE = _style_pair(
+        contact_sheet.get("png_size"), "contact_sheet.png_size"
+    )
+
+    maximum_geometry = mark.get("maximum_geometry_elements")
+    wordmark_width = lockup.get("wordmark_width")
+    mark_ratio = lockup.get("mark_to_wordmark_size")
+    gap = lockup.get("gap")
+    font_family = lockup.get("font_family")
+    font_weight = lockup.get("font_weight")
+    if not isinstance(maximum_geometry, int) or maximum_geometry <= 0:
+        raise LogoError("mark.maximum_geometry_elements must be a positive integer")
+    if not isinstance(wordmark_width, int) or wordmark_width <= 0:
+        raise LogoError("lockup.wordmark_width must be a positive integer")
+    if not isinstance(mark_ratio, (int, float)) or mark_ratio <= 0:
+        raise LogoError("lockup.mark_to_wordmark_size must be positive")
+    if not isinstance(gap, int) or gap < 0:
+        raise LogoError("lockup.gap must be a non-negative integer")
+    if not isinstance(font_family, str) or not font_family.strip():
+        raise LogoError("lockup.font_family must be a non-empty string")
+    if not isinstance(font_weight, int) or not 100 <= font_weight <= 900:
+        raise LogoError("lockup.font_weight must be an integer from 100 to 900")
+
+    MAX_GEOMETRY_ELEMENTS = maximum_geometry
+    LOCKUP_WORDMARK_WIDTH = wordmark_width
+    MARK_TO_WORDMARK_SIZE = float(mark_ratio)
+    LOCKUP_GAP = gap
+    WORDMARK_FONT_FAMILY = font_family
+    WORDMARK_FONT_WEIGHT = font_weight
+    ACTIVE_STYLE_ID = style_id
+    return style
 
 
 def _local_name(value: str) -> str:
@@ -194,8 +282,11 @@ def validate_candidate(path: Path) -> ET.Element:
 
     if geometry_count == 0:
         raise LogoError(f"candidate contains no visible geometry: {path}")
-    if geometry_count > 16:
-        raise LogoError(f"candidate contains {geometry_count} geometry elements; maximum is 16")
+    if geometry_count > MAX_GEOMETRY_ELEMENTS:
+        raise LogoError(
+            f"candidate contains {geometry_count} geometry elements; "
+            f"maximum is {MAX_GEOMETRY_ELEMENTS}"
+        )
     return root
 
 
@@ -237,7 +328,7 @@ def build_mark_svg(root: ET.Element, project_name: str) -> str:
     return _svg_document(
         viewbox=MARK_VIEWBOX,
         title=f"{project_name} logo mark",
-        description=f"Editable vector mark for {project_name}.",
+        description=f"Rendering source for the {project_name} mark.",
         body=body,
     )
 
@@ -271,15 +362,15 @@ def build_lockup_svg(
         f'scale({mark_scale:g})">'
         f"{_geometry_markup(root, monochrome=False)}</g>\n"
         f'    <text id="logo-wordmark" x="{wordmark_x:g}" y="258" fill="{SECONDARY_COLOR}" '
-        'font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" '
-        f'font-size="{size}" font-weight="700" letter-spacing="0">'
+        f'font-family="{html.escape(WORDMARK_FONT_FAMILY, quote=True)}" '
+        f'font-size="{size}" font-weight="{WORDMARK_FONT_WEIGHT}" letter-spacing="0">'
         f"{html.escape(project_name, quote=False)}</text>\n"
         "  </g>"
     )
     return _svg_document(
         viewbox=LOCKUP_VIEWBOX,
         title=f"{project_name} horizontal logo",
-        description=f"Editable horizontal vector logo for {project_name}.",
+        description=f"Rendering source for the {project_name} horizontal logo.",
         body=body,
     )
 
@@ -326,7 +417,7 @@ def build_contact_sheet(project_name: str, roots: list[ET.Element]) -> str:
                 f'<rect x="{left + 448}" y="882" width="176" height="176" rx="14" fill="#f4f6f8"/>',
                 _preview_mark(root, left + 472, 906, 128, monochrome=False),
                 f'<text x="{left + 502}" y="1087" fill="#656b73" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="18">128px</text>',
-                f'<text x="{left + 36}" y="1190" fill="#656b73" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="21">Transparent SVG / two colors / no effects</text>',
+                f'<text x="{left + 36}" y="1190" fill="#656b73" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="21">Transparent / two colors / no effects</text>',
                 "</g>",
             ]
         )
@@ -342,9 +433,7 @@ def build_contact_sheet(project_name: str, roots: list[ET.Element]) -> str:
 
 def logo_paths(output_dir: Path, slug: str) -> dict[str, Path]:
     return {
-        "mark_svg": output_dir / f"{slug}-logo-mark.svg",
         "mark_png": output_dir / f"{slug}-logo-mark.png",
-        "lockup_svg": output_dir / f"{slug}-logo-lockup.svg",
         "lockup_png": output_dir / f"{slug}-logo-lockup.png",
     }
 
@@ -466,40 +555,6 @@ def _validate_final_svg(
                 raise LogoError(f"wordmark text must use {SECONDARY_COLOR} in {path}")
 
 
-def load_logo_lockup(path: Path) -> tuple[str, float]:
-    """Return validated horizontal Logo geometry and its wordmark font size."""
-    _validate_final_svg(path, LOCKUP_VIEWBOX, allow_wordmark=True)
-    _, root, _ = _read_svg(path)
-    lockup = next(
-        (
-            element
-            for element in root.iter()
-            if _local_name(element.tag) == "g" and element.attrib.get("id") == "logo-lockup"
-        ),
-        None,
-    )
-    wordmarks = [
-        element
-        for element in root.iter()
-        if _local_name(element.tag) == "text"
-    ]
-    if lockup is None or len(wordmarks) != 1:
-        raise LogoError(f"horizontal Logo structure is incomplete in {path}")
-    wordmark = wordmarks[0]
-    if wordmark.attrib.get("id") != "logo-wordmark":
-        raise LogoError(f"horizontal Logo wordmark id is invalid in {path}")
-    geometry = "".join(
-        ET.tostring(copy.deepcopy(child), encoding="unicode") for child in list(lockup)
-    )
-    if not geometry:
-        raise LogoError(f"horizontal Logo contains no geometry in {path}")
-    try:
-        font_size = float(wordmark.attrib["font-size"])
-    except (KeyError, ValueError) as exc:
-        raise LogoError(f"Logo wordmark has an invalid font size in {path}") from exc
-    return geometry, font_size
-
-
 def _validate_png(path: Path, expected_size: tuple[int, int]) -> tuple[int, int]:
     width, height, color_type = png_metadata(path)
     if (width, height) != expected_size:
@@ -511,15 +566,13 @@ def _validate_png(path: Path, expected_size: tuple[int, int]) -> tuple[int, int]
 
 def validate_logo_outputs(slug: str, output_dir: Path) -> dict[str, object]:
     paths = logo_paths(output_dir, slug)
-    _validate_final_svg(paths["mark_svg"], MARK_VIEWBOX, allow_wordmark=False)
-    _validate_final_svg(paths["lockup_svg"], LOCKUP_VIEWBOX, allow_wordmark=True)
-    load_logo_lockup(paths["lockup_svg"])
     sizes = {
         "mark_png": list(_validate_png(paths["mark_png"], MARK_PNG_SIZE)),
         "lockup_png": list(_validate_png(paths["lockup_png"], LOCKUP_PNG_SIZE)),
     }
     return {
         "slug": slug,
+        "logo_style": ACTIVE_STYLE_ID,
         "outputs": {key: str(path) for key, path in paths.items()},
         "png_sizes": sizes,
         "transparent_pngs": True,
@@ -542,6 +595,7 @@ def _ensure_writable_outputs(paths: list[Path], *, force: bool) -> None:
 
 
 def command_preview(args: argparse.Namespace) -> int:
+    configure_style(args.style)
     project_name = _single_line(args.project_name, "project_name", max_length=80)
     slug = _slug(args.slug)
     input_dir = Path(args.input_dir).resolve()
@@ -552,14 +606,13 @@ def command_preview(args: argparse.Namespace) -> int:
         expected = ", ".join(CONCEPT_FILENAMES)
         raise LogoError(f"input directory must contain exactly these SVG files: {expected}")
     roots = [validate_candidate(path) for path in inputs]
-    sheet_svg = output_dir / f"{slug}-logo-concepts.svg"
     sheet_png = output_dir / f"{slug}-logo-concepts.png"
-    _ensure_writable_outputs([sheet_svg, sheet_png], force=args.force)
+    _ensure_writable_outputs([sheet_png], force=args.force)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="logo-preview-", dir=output_dir) as temp_name:
         temp_dir = Path(temp_name)
-        temp_svg = temp_dir / sheet_svg.name
+        temp_svg = temp_dir / f"{slug}-logo-concepts.svg"
         temp_png = temp_dir / sheet_png.name
         _write_svg(temp_svg, build_contact_sheet(project_name, roots))
         sync_playwright = _load_playwright()
@@ -572,15 +625,14 @@ def command_preview(args: argparse.Namespace) -> int:
         width, height, _ = png_metadata(temp_png)
         if (width, height) != CONTACT_SHEET_SIZE:
             raise LogoError(f"contact sheet must be {CONTACT_SHEET_SIZE[0]}x{CONTACT_SHEET_SIZE[1]}")
-        for source, destination in ((temp_svg, sheet_svg), (temp_png, sheet_png)):
-            if destination.exists():
-                destination.unlink()
-            shutil.move(str(source), str(destination))
+        if sheet_png.exists():
+            sheet_png.unlink()
+        shutil.move(str(temp_png), str(sheet_png))
 
     result = {
         "project_name": project_name,
+        "logo_style": ACTIVE_STYLE_ID,
         "concepts": [str(path) for path in inputs],
-        "contact_sheet_svg": str(sheet_svg),
         "contact_sheet_png": str(sheet_png),
         "contact_sheet_size": list(CONTACT_SHEET_SIZE),
     }
@@ -589,6 +641,7 @@ def command_preview(args: argparse.Namespace) -> int:
 
 
 def command_render(args: argparse.Namespace) -> int:
+    configure_style(args.style)
     project_name = _single_line(args.project_name, "project_name", max_length=80)
     slug = _slug(args.slug)
     mark_path = Path(args.mark).resolve()
@@ -601,23 +654,27 @@ def command_render(args: argparse.Namespace) -> int:
     with tempfile.TemporaryDirectory(prefix="logo-render-", dir=output_dir) as temp_name:
         temp_dir = Path(temp_name)
         temp_paths = logo_paths(temp_dir, slug)
+        mark_svg = temp_dir / f"{slug}-logo-mark.svg"
+        lockup_svg = temp_dir / f"{slug}-logo-lockup.svg"
 
         sync_playwright = _load_playwright()
         with sync_playwright() as playwright:
             browser = _launch_browser(playwright)
             try:
-                _write_svg(temp_paths["mark_svg"], build_mark_svg(root, project_name))
-                _fit_lockup_svg(browser, temp_paths["lockup_svg"], root, project_name)
+                _write_svg(mark_svg, build_mark_svg(root, project_name))
+                _fit_lockup_svg(browser, lockup_svg, root, project_name)
+                _validate_final_svg(mark_svg, MARK_VIEWBOX, allow_wordmark=False)
+                _validate_final_svg(lockup_svg, LOCKUP_VIEWBOX, allow_wordmark=True)
                 _screenshot(
                     browser,
-                    temp_paths["mark_svg"],
+                    mark_svg,
                     temp_paths["mark_png"],
                     MARK_PNG_SIZE,
                     transparent=True,
                 )
                 _screenshot(
                     browser,
-                    temp_paths["lockup_svg"],
+                    lockup_svg,
                     temp_paths["lockup_png"],
                     LOCKUP_PNG_SIZE,
                     transparent=True,
@@ -635,57 +692,8 @@ def command_render(args: argparse.Namespace) -> int:
     return 0
 
 
-def _raster_target(svg_path: Path) -> tuple[str, str, tuple[int, int], tuple[int, int], bool]:
-    if svg_path.name.endswith("-logo-mark.svg"):
-        return "-logo-mark.svg", "mark_png", MARK_VIEWBOX, MARK_PNG_SIZE, False
-    if svg_path.name.endswith("-logo-lockup.svg"):
-        return "-logo-lockup.svg", "lockup_png", LOCKUP_VIEWBOX, LOCKUP_PNG_SIZE, True
-    raise LogoError(
-        "editable SVG filename must end with '-logo-mark.svg' or '-logo-lockup.svg'"
-    )
-
-
-def command_rasterize(args: argparse.Namespace) -> int:
-    svg_path = Path(args.svg).resolve()
-    suffix, output_key, expected_viewbox, expected_size, allow_wordmark = _raster_target(
-        svg_path
-    )
-    slug = _slug(svg_path.name[: -len(suffix)])
-    _validate_final_svg(
-        svg_path,
-        expected_viewbox,
-        allow_wordmark=allow_wordmark,
-    )
-    output_dir = Path(args.output_dir).resolve()
-    output_path = logo_paths(output_dir, slug)[output_key]
-    _ensure_writable_outputs([output_path], force=args.force)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="logo-raster-", dir=output_dir) as temp_name:
-        temp_png = Path(temp_name) / output_path.name
-        sync_playwright = _load_playwright()
-        with sync_playwright() as playwright:
-            browser = _launch_browser(playwright)
-            try:
-                _screenshot(browser, svg_path, temp_png, expected_size, transparent=True)
-            finally:
-                browser.close()
-        _validate_png(temp_png, expected_size)
-        if output_path.exists():
-            output_path.unlink()
-        shutil.move(str(temp_png), str(output_path))
-
-    result = {
-        "svg": str(svg_path),
-        "png": str(output_path),
-        "png_size": list(_validate_png(output_path, expected_size)),
-        "transparent": True,
-    }
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
 def command_validate(args: argparse.Namespace) -> int:
+    configure_style(args.style)
     slug = _slug(args.slug)
     result = validate_logo_outputs(slug, Path(args.output_dir).resolve())
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -701,29 +709,26 @@ def build_parser() -> argparse.ArgumentParser:
     preview = subparsers.add_parser("preview", help="Validate three concepts and create a contact sheet.")
     preview.add_argument("--project-name", required=True, help="Exact project display name.")
     preview.add_argument("--slug", required=True, help="Lowercase hyphenated repository slug.")
+    preview.add_argument("--style", required=True, help="Logo style identifier.")
     preview.add_argument("--input-dir", required=True, help="Directory containing concept-a/b/c.svg.")
     preview.add_argument("--output-dir", required=True, help="Temporary contact-sheet output directory.")
     preview.add_argument("--force", action="store_true", help="Replace existing contact-sheet files.")
     preview.set_defaults(func=command_preview)
 
     render = subparsers.add_parser(
-        "render", help="Create Mark and horizontal Lockup SVG/PNG files from an approved concept."
+        "render", help="Create Mark and horizontal Lockup PNG files from an approved concept."
     )
     render.add_argument("--project-name", required=True, help="Exact project display name.")
     render.add_argument("--slug", required=True, help="Lowercase hyphenated repository slug.")
+    render.add_argument("--style", required=True, help="Logo style identifier.")
     render.add_argument("--mark", required=True, help="Path to the approved 512x512 mark SVG.")
     render.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
     render.add_argument("--force", action="store_true", help="Replace existing generated logo files.")
     render.set_defaults(func=command_render)
 
-    rasterize = subparsers.add_parser("rasterize", help="Render one PNG from a manually edited Logo SVG.")
-    rasterize.add_argument("svg", help="Path to an editable generated logo SVG.")
-    rasterize.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
-    rasterize.add_argument("--force", action="store_true", help="Replace the corresponding PNG file.")
-    rasterize.set_defaults(func=command_rasterize)
-
-    validate = subparsers.add_parser("validate", help="Validate the generated Logo SVG and PNG.")
+    validate = subparsers.add_parser("validate", help="Validate generated Logo PNG files.")
     validate.add_argument("--slug", required=True, help="Lowercase hyphenated repository slug.")
+    validate.add_argument("--style", required=True, help="Logo style identifier.")
     validate.add_argument("--output-dir", default="assets", help="Output directory (default: assets).")
     validate.set_defaults(func=command_validate)
     return parser

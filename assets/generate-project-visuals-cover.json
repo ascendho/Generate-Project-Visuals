@@ -1,10 +1,11 @@
 {
-  "schema_version": 3,
-  "style": "clean-editorial",
+  "schema_version": 4,
+  "cover_style": "clean-editorial",
+  "logo_style": "clean-geometric",
   "repository_slug": "generate-project-visuals",
   "project_name": "Generate Project Visuals",
   "project_url": "https://github.com/ascendho/Generate-Project-Visuals",
-  "logo_lockup": "generate-project-visuals-logo-lockup.svg",
+  "logo_lockup": "generate-project-visuals-logo-lockup.png",
   "default_locale": "en",
   "locales": {
     "en": {
