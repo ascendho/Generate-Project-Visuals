@@ -161,6 +161,20 @@ Raster images cannot contain clickable regions. Promo images therefore include
 the repository address and a QR code. On a web page, wrap the image in an
 ordinary link when click-through behavior is needed.
 
+## Contributing
+
+Issues and pull requests are welcome for bug fixes, documentation, renderer
+improvements, and new visual styles. Open an issue before starting a substantial
+feature or changing public rendering behavior.
+
+For a new style, follow the existing
+[Cover example](plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/)
+under `styles/cover/<style-id>/` or
+[Logo example](plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/)
+under `styles/logo/<style-id>/`. Keep temporary previews in `/tmp`, keep public
+assets PNG-only, and include validation results and before-and-after images in
+visual pull requests.
+
 ## Support and policies
 
 - Support: [GitHub Issues](https://github.com/ascendho/Generate-Project-Visuals/issues)

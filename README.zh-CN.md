@@ -111,6 +111,12 @@ git push origin v0.2.1
 
 PNG 等位图不能包含可点击区域，因此宣传图会同时显示仓库地址和二维码。在网页中需要点击跳转时，应使用普通链接包裹图片。
 
+## 参与贡献
+
+欢迎通过 Issue 和 Pull Request 提交错误修复、文档改进、渲染器改进或新视觉风格。较大的功能或会改变公开渲染行为的改动，请先创建 Issue 讨论。
+
+新增风格时，请参考 `styles/cover/<style-id>/` 下的现有 [Cover 示例](plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/)，或 `styles/logo/<style-id>/` 下的现有 [Logo 示例](plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/)。临时预览放在 `/tmp`，公开资产保持为 PNG；视觉类 Pull Request 请附验证结果和修改前后对比图。
+
 ## 支持与政策
 
 - 支持：[GitHub Issues](https://github.com/ascendho/Generate-Project-Visuals/issues)
