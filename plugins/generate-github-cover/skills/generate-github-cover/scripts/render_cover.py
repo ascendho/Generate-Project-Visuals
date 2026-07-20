@@ -831,7 +831,8 @@ def _load_segno():
     except ModuleNotFoundError as exc:
         raise CoverError(
             "Segno is required for promotional QR codes. Install it with "
-            "`python -m pip install playwright segno`."
+            "`python3 -m pip install playwright==1.61.0 segno==1.6.6` "
+            "(or use another Python 3.10+ executable)."
         ) from exc
     return segno
 
@@ -949,8 +950,10 @@ def _load_playwright():
         from playwright.sync_api import sync_playwright
     except ModuleNotFoundError as exc:
         raise CoverError(
-            "Playwright is required. Install it with `python -m pip install playwright` "
-            "and `python -m playwright install chromium`."
+            "Playwright is required. Install it with "
+            "`python3 -m pip install playwright==1.61.0 segno==1.6.6` "
+            "and `python3 -m playwright install chromium` (or use another "
+            "Python 3.10+ executable)."
         ) from exc
     return sync_playwright
 
@@ -960,7 +963,7 @@ def launch_browser(playwright):
         return playwright.chromium.launch(headless=True)
     except Exception as exc:
         raise CoverError(
-            "Chromium could not start. Run `python -m playwright install chromium` "
+            "Chromium could not start. Run `python3 -m playwright install chromium` "
             f"and retry. Original error: {exc}"
         ) from exc
 

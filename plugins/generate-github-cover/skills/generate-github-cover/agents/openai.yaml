@@ -1,6 +1,7 @@
 interface:
-  display_name: "Generate GitHub Cover"
+  display_name: "Generate Project Visuals"
   short_description: "Create PNG logos and repository visual assets"
+  brand_color: "#2855D9"
   default_prompt: "Use $generate-github-cover to create this repository's PNG logo and English Cover, Social Preview, and Promo assets."
 policy:
   allow_implicit_invocation: true

@@ -1,9 +1,9 @@
 {
   "name": "generate-github-cover",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Turn repository context into polished project branding and shareable artwork.",
   "author": {
-    "name": "ascendho",
+    "name": "Asc Ho",
     "url": "https://github.com/ascendho"
   },
   "homepage": "https://github.com/ascendho/Generate-Project-Visuals#readme",
@@ -20,15 +20,20 @@
   "interface": {
     "displayName": "Generate Project Visuals",
     "shortDescription": "Create logos, covers, and social artwork.",
-    "longDescription": "Analyze a repository and produce PNG-only logos, English visual assets by default, and requested localized variants.",
-    "developerName": "ascendho",
+    "longDescription": "Analyze a repository, propose three logo directions for approval, and render validated PNG logo marks, lockups, README covers, social previews, and promo artwork. Generate English by default and localized variants only when requested or already configured.",
+    "developerName": "Asc Ho",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
       "Write"
     ],
+    "websiteURL": "https://github.com/ascendho/Generate-Project-Visuals",
+    "privacyPolicyURL": "https://github.com/ascendho/Generate-Project-Visuals/blob/master/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/ascendho/Generate-Project-Visuals/blob/master/TERMS.md",
     "defaultPrompt": [
-      "Create this project's logo and English visual asset set."
+      "Create this repository's logo and English visual asset set.",
+      "Refresh this repository's cover and social preview without changing its logo.",
+      "Create English and Simplified Chinese visual assets for this repository."
     ],
     "brandColor": "#2855D9",
     "composerIcon": "./assets/icon.png",

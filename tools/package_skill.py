@@ -27,6 +27,7 @@ REQUIRED_FILES = (
     "agents/openai.yaml",
     "requirements.txt",
     "references/style-authoring.md",
+    "scripts/check_runtime.py",
     "scripts/render_cover.py",
     "scripts/render_logo.py",
     "scripts/style_registry.py",

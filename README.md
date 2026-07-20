@@ -39,12 +39,18 @@ and invocation name remains `generate-github-cover`.
 
 ## Install
 
-The renderer requires Python 3.10+, Playwright, Segno, and Chromium:
+The renderer requires Python 3.10+, Playwright, Segno, and Chromium. The
+examples use `python3`, the usual executable on macOS and Linux; `python` is
+also valid when it resolves to Python 3.10 or later.
 
 ```sh
-python -m pip install playwright segno
-python -m playwright install chromium
+python3 -m pip install "playwright==1.61.0" "segno==1.6.6"
+python3 -m playwright install chromium
 ```
+
+Before it creates or renders assets, the Skill checks the Python packages and
+Chromium runtime. It reports exact remediation commands when something is
+missing and never installs dependencies without approval.
 
 ### Codex Plugin (recommended)
 
@@ -126,10 +132,10 @@ the standalone Release archive can then run:
 ```sh
 SKILL_DIR="$HOME/.agents/skills/generate-github-cover"
 
-python "$SKILL_DIR/scripts/render_cover.py" render \
+python3 "$SKILL_DIR/scripts/render_cover.py" render \
   assets/<repo-slug>-cover.json --output-dir assets --force
 
-python "$SKILL_DIR/scripts/render_cover.py" validate \
+python3 "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<repo-slug>-cover.json --output-dir assets
 ```
 
@@ -145,8 +151,8 @@ tag runs the GitHub Actions workflow and publishes both files automatically:
 
 ```sh
 # First update plugin.json to the same semantic version and commit it.
-git tag -a v0.2.0 -m "Generate Project Visuals v0.2.0"
-git push origin v0.2.0
+git tag -a v0.2.1 -m "Generate Project Visuals v0.2.1"
+git push origin v0.2.1
 ```
 
 ## Links in shared images
@@ -154,6 +160,12 @@ git push origin v0.2.0
 Raster images cannot contain clickable regions. Promo images therefore include
 the repository address and a QR code. On a web page, wrap the image in an
 ordinary link when click-through behavior is needed.
+
+## Support and policies
+
+- Support: [GitHub Issues](https://github.com/ascendho/Generate-Project-Visuals/issues)
+- Privacy: [Privacy Policy](PRIVACY.md)
+- Terms: [Terms of Use](TERMS.md)
 
 ## License
 

@@ -16,8 +16,8 @@ Keep temporary concepts and previews under `/tmp`, never in the repository.
 There is no separate build step. Install runtime dependencies and Chromium:
 
 ```sh
-python -m pip install playwright segno
-python -m playwright install chromium
+python3 -m pip install playwright==1.61.0 segno==1.6.6
+python3 -m playwright install chromium
 ```
 
 Use the nested renderers from the repository root:
@@ -25,13 +25,13 @@ Use the nested renderers from the repository root:
 ```sh
 SKILL_DIR=plugins/generate-github-cover/skills/generate-github-cover
 python3 -m py_compile "$SKILL_DIR"/scripts/*.py tools/package_skill.py
-python "$SKILL_DIR/scripts/render_cover.py" render \
+python3 "$SKILL_DIR/scripts/render_cover.py" render \
   assets/<slug>-cover.json --output-dir /tmp/<slug>-preview
-python "$SKILL_DIR/scripts/render_cover.py" validate \
+python3 "$SKILL_DIR/scripts/render_cover.py" validate \
   assets/<slug>-cover.json --output-dir assets
-python "$SKILL_DIR/scripts/render_logo.py" validate \
+python3 "$SKILL_DIR/scripts/render_logo.py" validate \
   --style clean-geometric --slug <slug> --output-dir assets
-python tools/package_skill.py v0.2.0 --check-only
+python3 tools/package_skill.py v0.2.1 --check-only
 ```
 
 Use `render_logo.py preview` and `render` with an explicit `--style`. Add `--force` only when replacing generated PNGs intentionally.

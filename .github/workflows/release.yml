@@ -33,6 +33,9 @@ jobs:
             plugins/generate-github-cover/skills/generate-github-cover/scripts/*.py \
             tools/package_skill.py
 
+      - name: Check rendering runtime
+        run: python plugins/generate-github-cover/skills/generate-github-cover/scripts/check_runtime.py
+
       - name: Validate and smoke-test rendering
         run: |
           python tools/package_skill.py "$GITHUB_REF_NAME" --check-only
