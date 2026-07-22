@@ -61,6 +61,12 @@ unzip generate-github-cover-vX.Y.Z.zip -d "$HOME/.agents/skills"
 
 克隆整个仓库主要用于开发。根目录 README、工作流和项目展示图片不会进入独立 Skill 压缩包。
 
+### 自定义风格
+
+解压后的 Skill 可以直接编辑。你可以复制现有的 [Cover 风格](plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/)或 [Logo 风格](plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/)，使用新的小写连字符风格 ID，再根据自己的视觉需求修改 manifest、参考说明，以及 Cover 风格的 SVG 模板。有效风格会被自动发现；可以在提示词中指定新风格 ID，也可以将它写入 Cover JSON 的 `cover_style` 或 `logo_style`。所需文件和约定请参阅[风格创作指南](plugins/generate-github-cover/skills/generate-github-cover/references/style-authoring.md)。
+
+Plugin 升级或重新安装可能覆盖已安装文件，因此请将自定义风格保存在自己的 Fork 或单独维护的 Skill 副本中。
+
 ## 使用
 
 ```text

@@ -81,6 +81,21 @@ Cloning the whole repository is intended for development. Repository READMEs,
 workflow files, and showcase artwork are deliberately not included in the
 standalone Skill archive.
 
+### Customize styles
+
+The extracted Skill is editable. To create a style for your own visual needs,
+copy the existing
+[Cover style](plugins/generate-github-cover/skills/generate-github-cover/styles/cover/clean-editorial/)
+or [Logo style](plugins/generate-github-cover/skills/generate-github-cover/styles/logo/clean-geometric/)
+to a new lowercase hyphenated style ID, then update its manifest, reference,
+and, for Cover styles, SVG templates. Valid styles are discovered automatically;
+request the new ID in your prompt or set it as `cover_style` or `logo_style` in
+the Cover JSON. See the [style-authoring guide](plugins/generate-github-cover/skills/generate-github-cover/references/style-authoring.md)
+for the required files and contracts.
+
+Keep custom styles in your own fork or a separately managed Skill copy because
+Plugin upgrades and reinstalls may replace installed files.
+
 ## Use
 
 ```text
